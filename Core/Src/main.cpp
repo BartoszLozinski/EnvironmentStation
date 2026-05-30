@@ -27,6 +27,42 @@ static void MX_I2C1_Init(void);
 
 Peripherals::HAL::UartIT uart2{ huart2 };
 
+// I2C LPS25HB module test - forbot
+
+#define LPS25HB_ADDR			0xBA
+#define LPS25HB_WHO_AM_I 		0x0F
+#define LPS25HB_CTRL_REG1 		0x20
+#define LPS25HB_CTRL_REG2 		0x21
+#define LPS25HB_CTRL_REG3 		0x22
+#define LPS25HB_CTRL_REG4 		0x23
+#define LPS25HB_PRESS_OUT_XL 	0x28
+#define LPS25HB_PRESS_OUT_L 	0x29
+#define LPS25HB_PRESS_OUT_H 	0x2A
+#define LPS25HB_TEMP_OUT_L 		0x2B
+#define LPS25HB_TEMP_OUT_H 		0x2C
+
+#define LPS25HB_CTRL_REG1_PD 	0x80
+#define LPS25HB_CTRL_REG1_ODR2 	0x40
+#define LPS25HB_CTRL_REG1_ODR1 	0x20
+#define LPS25HB_CTRL_REG1_ODR0 	0x10
+
+[[nodiscard]] uint8_t lps_read_reg(const uint8_t reg)
+{
+    uint8_t value;
+    HAL_I2C_Mem_Read(&hi2c1, LPS25HB_ADDR, reg, 1, &value, sizeof(value), HAL_MAX_DELAY);
+    return value;
+}
+
+void lps_write_reg(const uint8_t reg, uint8_t value)
+{
+    HAL_I2C_Mem_Write(&hi2c1, LPS25HB_ADDR, reg, 1, &value, sizeof(value), HAL_MAX_DELAY);
+}
+
+float lps_recalculate_temp(const int16_t rawTemp)
+{
+    return rawTemp / 480.0f + 42.5f;
+}
+
 int main()
 {
     /* MCU Configuration--------------------------------------------------------*/
@@ -49,6 +85,36 @@ int main()
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
 
+    // LPS25HB test
+
+    static constexpr char testMsg[] = "LPS25HB test:\r\n";
+
+    uart2.Transmit(reinterpret_cast<const uint8_t*>(testMsg), strlen(testMsg));
+    
+    const uint8_t whoAmI = lps_read_reg(LPS25HB_WHO_AM_I);
+    if (whoAmI == 0xBD)
+    {
+        static constexpr char successMsg[] = "LPS25HB Found!\r\n";
+        uart2.Transmit(reinterpret_cast<const uint8_t*>(successMsg), strlen(successMsg));
+        // Waking LPS25HB up
+        // lps_write_reg(LPS25HB_CTRL_REG1, 0xC0);
+        lps_write_reg(LPS25HB_CTRL_REG1, LPS25HB_CTRL_REG1_PD | LPS25HB_CTRL_REG1_ODR2);
+        HAL_Delay(100); //TODO - get rid to blocking delay
+
+        int16_t temp = 0;
+        HAL_I2C_Mem_Read(&hi2c1, LPS25HB_ADDR, LPS25HB_TEMP_OUT_L | 0x80, 1, reinterpret_cast<uint8_t*>(&temp), sizeof(temp), HAL_MAX_DELAY);
+        char tempBuffer[16];
+        snprintf(tempBuffer, sizeof(tempBuffer), "Temp: %.2f C\r\n", lps_recalculate_temp(temp));
+        uart2.Transmit(reinterpret_cast<const uint8_t*>(tempBuffer), strlen(tempBuffer));
+    }
+    else
+    {
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "Error: (x%02X)\r\n", whoAmI);
+        uart2.Transmit(reinterpret_cast<const uint8_t*>(buffer), strlen(buffer));
+    }
+    
+
     while (true)
     {
         // UART 1 Test - Bluetooth HC-06
@@ -62,7 +128,7 @@ int main()
             btHC06Uart.Poll();
         }
 
-        if (auto lineOpt = btLineParser.ReadLine())
+        if (const auto lineOpt = btLineParser.ReadLine())
         {
             const auto line = *lineOpt;
             const char* prefix = "RX: ";
@@ -78,7 +144,7 @@ int main()
             btHC06Uart.Transmit(reinterpret_cast<const uint8_t*>(resetMsg.data()), resetMsg.size());
         }
         
-        if (auto lineOpt = lineParser.ReadLine())
+        if (const auto lineOpt = lineParser.ReadLine())
         {
             const auto line = *lineOpt;
             const char* prefix = "RX Uart2IT: ";
