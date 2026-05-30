@@ -55,3 +55,46 @@ namespace Peripherals
         };
     }
 }
+
+/*
+
+USAGE EXAMPLE
+
+
+#include "../../Peripherals/UART/HAL/Uart.hpp"
+UART_HandleTypeDef huart2;
+Peripherals::HAL::Uart uart2{ huart2 };
+
+//All necessary HAL generated config
+
+int main()
+{
+    while(true)
+    {    
+        if (uart2PollTimer.IsExpired())
+        {
+            uart2PollTimer.Reset();
+            uart2.Poll();
+        }
+        if (auto lineOpt = lineParser.ReadLine())
+        {
+            const auto line = *lineOpt;
+            const char* prefix = "Received line: ";
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(prefix), strlen(prefix));
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(line.data()), line.size());
+            uart2.Transmit(reinterpret_cast<const uint8_t*>("\r\n"), 2);
+            if (std::string_view{ reinterpret_cast<const char*>(line.data()), line.size() } == "test")
+            {
+                const char* msg = "MATCH!\r\n";
+                uart2.Transmit(reinterpret_cast<const uint8_t*>(msg), strlen(msg));
+            }
+        }
+        if (uartResetTimer.IsExpired())
+        {
+            uartResetTimer.Reset();
+            std::string_view resetMsg = "UART Reset\r\n";
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(resetMsg.data()), resetMsg.size());
+        }
+    }
+}
+*/

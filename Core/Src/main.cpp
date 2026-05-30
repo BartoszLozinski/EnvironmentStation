@@ -5,8 +5,6 @@
 #include <string_view>
 
 #include "../../Peripherals/Timer/HAL/SoftwareTimer.hpp"
-//#include "../../Peripherals/Timer/HAL/InputCapture.hpp"
-//#include "../../Peripherals/Timer/HAL/Pwm.hpp"
 #include "../../Peripherals/UART/HAL/Uart.hpp"
 #include "../../Peripherals/UART/HAL/UartIT.hpp"
 #include "../../Peripherals/UART/LineParser.hpp"
@@ -33,8 +31,6 @@ int main()
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
     MX_USART2_UART_Init();
-    //MX_TIM2_Init();
-    //MX_TIM3_Init();
     MX_USART1_UART_Init();
     
     uart2.StartReceiveIT();
@@ -49,40 +45,6 @@ int main()
 
     while (true)
     {
-        // UART Test
-        /*
-        if (uart2PollTimer.IsExpired())
-        {
-            uart2PollTimer.Reset();
-            uart2.Poll();
-        }
-
-        if (auto lineOpt = lineParser.ReadLine())
-        {
-            const auto line = *lineOpt;
-
-            const char* prefix = "Received line: ";
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(prefix), strlen(prefix));
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(line.data()), line.size());
-            uart2.Transmit(reinterpret_cast<const uint8_t*>("\r\n"), 2);
-
-
-            if (std::string_view{ reinterpret_cast<const char*>(line.data()), line.size() } == "test")
-            {
-                const char* msg = "MATCH!\r\n";
-                uart2.Transmit(reinterpret_cast<const uint8_t*>(msg), strlen(msg));
-            }
-        }
-
-        if (uartResetTimer.IsExpired())
-        {
-            uartResetTimer.Reset();
-            std::string_view resetMsg = "UART Reset\r\n";
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(resetMsg.data()), resetMsg.size());
-        }
-        */
-        
-
         // UART 1 Test - Bluetooth HC-06
         // connection at linux
         // sudo rfcomm connect 0 <Address>
@@ -102,7 +64,6 @@ int main()
             btHC06Uart.Transmit(reinterpret_cast<const uint8_t*>(line.data()), line.size());
             btHC06Uart.Transmit(reinterpret_cast<const uint8_t*>("\r\n"), 2);
         }
-        
         
         if (btUartResetTimer.IsExpired())
         {  
