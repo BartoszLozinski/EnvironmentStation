@@ -58,10 +58,16 @@ void lps_write_reg(const uint8_t reg, uint8_t value)
     HAL_I2C_Mem_Write(&hi2c1, LPS25HB_ADDR, reg, 1, &value, sizeof(value), HAL_MAX_DELAY);
 }
 
-float lps_recalculate_temp(const int16_t rawTemp)
+[[nodiscard]] float lps_recalculate_temp(const int16_t rawTemp)
 {
-    return rawTemp / 480.0f + 42.5f;
+    return rawTemp / 480.0f + 42.5f; // *C
 }
+
+[[nodiscard]] uint16_t lps_recalculate_pressure(const int32_t rawPressure)
+{
+    return rawPressure / 4096; // hPa
+}
+
 
 int main()
 {
@@ -106,6 +112,13 @@ int main()
         char tempBuffer[16];
         snprintf(tempBuffer, sizeof(tempBuffer), "Temp: %.2f C\r\n", lps_recalculate_temp(temp));
         uart2.Transmit(reinterpret_cast<const uint8_t*>(tempBuffer), strlen(tempBuffer));
+
+        // Pressure reading test
+        int32_t pressureRaw = 0;
+        HAL_I2C_Mem_Read(&hi2c1, LPS25HB_ADDR, LPS25HB_PRESS_OUT_XL | 0x80, 1, reinterpret_cast<uint8_t*>(&pressureRaw), 3, HAL_MAX_DELAY);
+        char pressureBuffer[32];
+        snprintf(pressureBuffer, sizeof(pressureBuffer), "Pressure: %i hPa\r\n", lps_recalculate_pressure(pressureRaw));
+        uart2.Transmit(reinterpret_cast<const uint8_t*>(pressureBuffer), strlen(pressureBuffer));
     }
     else
     {
@@ -113,7 +126,7 @@ int main()
         snprintf(buffer, sizeof(buffer), "Error: (x%02X)\r\n", whoAmI);
         uart2.Transmit(reinterpret_cast<const uint8_t*>(buffer), strlen(buffer));
     }
-    
+
 
     while (true)
     {
