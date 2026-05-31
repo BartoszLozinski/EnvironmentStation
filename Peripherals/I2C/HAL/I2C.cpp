@@ -10,11 +10,20 @@ namespace Peripherals
             HAL_I2C_Mem_Write(&i2cHandle, deviceAddress, memoryAddress, 1, &data, sizeof(data), HAL_MAX_DELAY);
         }
 
-        int32_t I2C::Read(const uint16_t deviceAddress, const uint16_t memoryAddress)
+        bool I2C::Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
         {
-            int32_t value = 0;
-            HAL_I2C_Mem_Read(&i2cHandle, deviceAddress, memoryAddress, 1, reinterpret_cast<uint8_t*>(&value), sizeof(value), HAL_MAX_DELAY);
-            return value;
+            if (buffer.empty())
+                return false;
+
+            static constexpr uint16_t memoryAddressSize = 1;
+            const auto status = HAL_I2C_Mem_Read( &i2cHandle
+                                                , deviceAddress
+                                                , memoryAddress
+                                                , memoryAddressSize
+                                                , buffer.data()
+                                                , buffer.size()
+                                                , HAL_MAX_DELAY);
+            return status == HAL_OK;
         }
     }
 }

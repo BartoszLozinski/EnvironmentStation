@@ -16,7 +16,7 @@ namespace Peripherals
             I2C_HandleTypeDef& i2cHandle;
         public:
             void Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value) override;
-            [[nodiscard]] int32_t Read(const uint16_t deviceAddress, const uint16_t memoryAddress) override;
+            [[nodiscard]] bool Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) override;
 
             I2C() = delete;
             I2C(const I2C&) = delete;
