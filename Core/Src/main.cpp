@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include "../../Peripherals/Timer/HAL/SoftwareTimer.hpp"
+#include "../../Peripherals/I2C/HAL/I2C.hpp"
 #include "../../Peripherals/UART/HAL/Uart.hpp"
 #include "../../Peripherals/UART/HAL/UartIT.hpp"
 #include "../../Peripherals/UART/LineParser.hpp"
@@ -90,6 +91,7 @@ int main()
     HAL::SoftwareTimer btUartPollTimer{ 1 };
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
+    Peripherals::HAL::I2C i2c1{ hi2c1 };
 
     // LPS25HB test
 
@@ -108,17 +110,34 @@ int main()
         HAL_Delay(100); //TODO - get rid to blocking delay
 
         int16_t temp = 0;
-        HAL_I2C_Mem_Read(&hi2c1, LPS25HB_ADDR, LPS25HB_TEMP_OUT_L | 0x80, 1, reinterpret_cast<uint8_t*>(&temp), sizeof(temp), HAL_MAX_DELAY);
-        char tempBuffer[16];
-        snprintf(tempBuffer, sizeof(tempBuffer), "Temp: %.2f C\r\n", lps_recalculate_temp(temp));
-        uart2.Transmit(reinterpret_cast<const uint8_t*>(tempBuffer), strlen(tempBuffer));
+        if (i2c1.Read(LPS25HB_ADDR, LPS25HB_TEMP_OUT_L | 0x80, std::span<uint8_t>(reinterpret_cast<uint8_t*>(&temp), sizeof(temp))))
+        {
+            //HAL_I2C_Mem_Read(&hi2c1, LPS25HB_ADDR, LPS25HB_TEMP_OUT_L | 0x80, 1, reinterpret_cast<uint8_t*>(&temp), sizeof(temp), HAL_MAX_DELAY);
+            char tempBuffer[16];
+            snprintf(tempBuffer, sizeof(tempBuffer), "Temp: %.2f C\r\n", lps_recalculate_temp(temp));
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(tempBuffer), strlen(tempBuffer));
+        }
+        else
+        {
+            char errorBuffer[32];
+            snprintf(errorBuffer, sizeof(errorBuffer), "Temp read error\r\n");
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
+        }
 
         // Pressure reading test
         int32_t pressureRaw = 0;
-        HAL_I2C_Mem_Read(&hi2c1, LPS25HB_ADDR, LPS25HB_PRESS_OUT_XL | 0x80, 1, reinterpret_cast<uint8_t*>(&pressureRaw), 3, HAL_MAX_DELAY);
-        char pressureBuffer[32];
-        snprintf(pressureBuffer, sizeof(pressureBuffer), "Pressure: %i hPa\r\n", lps_recalculate_pressure(pressureRaw));
-        uart2.Transmit(reinterpret_cast<const uint8_t*>(pressureBuffer), strlen(pressureBuffer));
+        if (i2c1.Read(LPS25HB_ADDR, LPS25HB_PRESS_OUT_XL | 0x80, std::span<uint8_t>(reinterpret_cast<uint8_t*>(&pressureRaw), sizeof(pressureRaw) - 1)))
+        {
+            char pressureBuffer[32];
+            snprintf(pressureBuffer, sizeof(pressureBuffer), "Pressure: %i hPa\r\n", lps_recalculate_pressure(pressureRaw));
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(pressureBuffer), strlen(pressureBuffer));
+        }
+        else
+        {
+            char errorBuffer[32];
+            snprintf(errorBuffer, sizeof(errorBuffer), "Pressure read error\r\n");
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
+        }
     }
     else
     {

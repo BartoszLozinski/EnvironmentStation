@@ -4,6 +4,10 @@ namespace Peripherals
 {
     namespace HAL
     {
+        I2C::I2C(I2C_HandleTypeDef& i2cHandle_)
+            : i2cHandle(i2cHandle_)
+        {}
+
         void I2C::Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value)
         {
             uint8_t data = value;
