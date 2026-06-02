@@ -22,6 +22,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         # ADC_HAL
         Timer
         UART_HAL
+        Devices
 )
 
 target_compile_definitions(${CMAKE_PROJECT_NAME}

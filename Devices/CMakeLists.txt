@@ -1,9 +1,10 @@
 set(target_name Devices)
 
-set(${target_name}_src  )
+set(${target_name}_src  LPS25HB.cpp)
 
 set(${target_name}_hpp  HC_SR04.hpp
-                        LM35.hpp)
+                        LM35.hpp
+                        LPS25HB.hpp)
 
 add_library(${target_name}  STATIC)
 
@@ -13,7 +14,7 @@ target_sources(${target_name}
     PRIVATE
         ${${target_name}_src}
     PUBLIC
-        FILE_SET HEADER
+        FILE_SET HEADERS
         BASE_DIRS ${DEVICES_DIR}
         FILES   ${${target_name}_hpp}
 )
