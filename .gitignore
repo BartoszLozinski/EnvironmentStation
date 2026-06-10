@@ -5,3 +5,4 @@ build/
 buildTests/
 .vscode/
 README.md
+.metadata/

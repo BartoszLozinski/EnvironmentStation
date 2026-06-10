@@ -27,6 +27,11 @@ namespace Device
 
     };
 
+    std::optional<uint8_t> LPS25HB::ReadWhoAmI() const
+    {
+        return ReadRegister(Registers::WHO_AM_I);
+    }
+
     std::optional<float> LPS25HB::ReadTemperature() const
     {
         int16_t rawTemp = 0;
@@ -35,4 +40,45 @@ namespace Device
         else
             return std::nullopt;
     };
+
+    void LPS25HB::SetMeasurementFrequency(const MeasurementFrequency freq)
+    {
+        uint8_t regValue = 0;
+        switch (freq)
+        {
+            case MeasurementFrequency::OneShot:
+                regValue = 0x00;
+                break;
+            case MeasurementFrequency::Hz1:
+                regValue = Registers::CTRL_REG1_ODR0;
+                break;
+            case MeasurementFrequency::Hz7:
+                regValue = Registers::CTRL_REG1_ODR1;
+                break;
+            case MeasurementFrequency::Hz12_5:
+                regValue = Registers::CTRL_REG1_ODR2;
+                break;
+            case MeasurementFrequency::Hz25:
+                regValue = Registers::CTRL_REG1_ODR2 | Registers::CTRL_REG1_ODR0;
+                break;
+        }
+        // Preserve PD (power) bit when changing ODR bits: read-modify-write
+        constexpr uint8_t ODR_MASK = Registers::CTRL_REG1_ODR2 | Registers::CTRL_REG1_ODR1 | Registers::CTRL_REG1_ODR0;
+        uint8_t current = 0;
+        if (auto curOpt = ReadRegister(Registers::CTRL_REG1); curOpt.has_value())
+            current = curOpt.value();
+
+        uint8_t newVal = (current & ~ODR_MASK) | (regValue & ODR_MASK);
+        WriteRegister(Registers::CTRL_REG1, newVal);
+    }
+
+    void LPS25HB::WakeUp()
+    {
+        // Set PD bit without clearing other CTRL_REG1 bits (like ODR)
+        uint8_t current = 0;
+        if (auto curOpt = ReadRegister(Registers::CTRL_REG1); curOpt.has_value())
+            current = curOpt.value();
+
+        WriteRegister(Registers::CTRL_REG1, static_cast<uint8_t>(current | Registers::CTRL_REG1_PD));
+    }
 }

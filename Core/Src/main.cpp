@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <cstring>
 #include <string_view>
+#include <array>
 
 #include "../../Peripherals/Timer/HAL/SoftwareTimer.hpp"
 #include "../../Peripherals/I2C/HAL/I2C.hpp"
@@ -92,6 +93,7 @@ int main()
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
     Peripherals::HAL::I2C i2c1{ hi2c1 };
+    Device::LPS25HB lps25hb{ i2c1 };
 
     // LPS25HB test
 
@@ -99,22 +101,28 @@ int main()
 
     uart2.Transmit(reinterpret_cast<const uint8_t*>(testMsg), strlen(testMsg));
     
-    const uint8_t whoAmI = lps_read_reg(LPS25HB_WHO_AM_I);
-    if (whoAmI == 0xBD)
+    const auto whoAmI = lps25hb.ReadWhoAmI();
+
+    if (whoAmI.has_value() && whoAmI.value() == 0xBD)
     {
         static constexpr char successMsg[] = "LPS25HB Found!\r\n";
         uart2.Transmit(reinterpret_cast<const uint8_t*>(successMsg), strlen(successMsg));
-        // Waking LPS25HB up
-        // lps_write_reg(LPS25HB_CTRL_REG1, 0xC0);
-        lps_write_reg(LPS25HB_CTRL_REG1, LPS25HB_CTRL_REG1_PD | LPS25HB_CTRL_REG1_ODR2);
+        lps25hb.WakeUp();
+        //lps25hb.SetMeasurementFrequency(Device::LPS25HB::MeasurementFrequency::Hz25);
         HAL_Delay(100); //TODO - get rid to blocking delay
 
-        int16_t temp = 0;
+        /*int16_t temp = 0;
         if (i2c1.Read(LPS25HB_ADDR, LPS25HB_TEMP_OUT_L | 0x80, std::span<uint8_t>(reinterpret_cast<uint8_t*>(&temp), sizeof(temp))))
         {
             //HAL_I2C_Mem_Read(&hi2c1, LPS25HB_ADDR, LPS25HB_TEMP_OUT_L | 0x80, 1, reinterpret_cast<uint8_t*>(&temp), sizeof(temp), HAL_MAX_DELAY);
             char tempBuffer[16];
             snprintf(tempBuffer, sizeof(tempBuffer), "Temp: %.2f C\r\n", lps_recalculate_temp(temp));
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(tempBuffer), strlen(tempBuffer));
+        }*/
+        if (const auto temp = lps25hb.ReadTemperature(); temp.has_value())
+        {
+            char tempBuffer[32];
+            snprintf(tempBuffer, sizeof(tempBuffer), "TempLPSClass: %.2f C\r\n", temp.value());
             uart2.Transmit(reinterpret_cast<const uint8_t*>(tempBuffer), strlen(tempBuffer));
         }
         else
@@ -142,7 +150,7 @@ int main()
     else
     {
         char buffer[64];
-        snprintf(buffer, sizeof(buffer), "Error: (x%02X)\r\n", whoAmI);
+        snprintf(buffer, sizeof(buffer), "Error: (x%02X)\r\n", whoAmI.value());
         uart2.Transmit(reinterpret_cast<const uint8_t*>(buffer), strlen(buffer));
     }
 

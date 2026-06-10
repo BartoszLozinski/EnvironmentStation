@@ -33,8 +33,19 @@ namespace Device
         [[nodiscard]] std::optional<uint8_t> ReadRegister(const uint8_t reg) const;        
 
     public:
-        
+        enum class MeasurementFrequency
+        {
+            OneShot,
+            Hz1,
+            Hz7,
+            Hz12_5,
+            Hz25
+        };
+
         explicit LPS25HB(Peripherals::I2CBase& i2c_);
+        [[nodiscard]] std::optional<uint8_t> ReadWhoAmI() const;
         [[nodiscard]] std::optional<float> ReadTemperature() const;
+        void SetMeasurementFrequency(const MeasurementFrequency freq);
+        void WakeUp();
     };
 }
