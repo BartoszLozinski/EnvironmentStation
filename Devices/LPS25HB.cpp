@@ -26,4 +26,13 @@ namespace Device
             return std::nullopt;
 
     };
+
+    std::optional<float> LPS25HB::ReadTemperature() const
+    {
+        int16_t rawTemp = 0;
+        if (i2c.Read(Registers::ADDR, Registers::TEMP_OUT_L | 0x80, std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawTemp), sizeof(rawTemp))))
+            return RecalculateRawTemperature(rawTemp);
+        else
+            return std::nullopt;
+    };
 }

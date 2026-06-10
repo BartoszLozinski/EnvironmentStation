@@ -2,9 +2,7 @@ set(target_name Devices)
 
 set(${target_name}_src  LPS25HB.cpp)
 
-set(${target_name}_hpp  HC_SR04.hpp
-                        LM35.hpp
-                        LPS25HB.hpp)
+set(${target_name}_hpp  LPS25HB.hpp)
 
 add_library(${target_name}  STATIC)
 
@@ -19,13 +17,11 @@ target_sources(${target_name}
         FILES   ${${target_name}_hpp}
 )
 
-target_link_libraries(Timer)
 target_compile_options(${target_name}   PRIVATE     -Wall
                                                     -Werror
                                                     -Wextra
                                                     -Wpedantic
                                                     -fverbose-asm # additional comments for generated assembler code
-                                                    -MMD # create dependency file
 
                                                     #$<$<COMPILE_LANGUAGE:C>:-Wstrict-prototypes>
 

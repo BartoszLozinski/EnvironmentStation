@@ -26,6 +26,7 @@ set(CORE_FLAGS  -mcpu=cortex-m4
                 -mfloat-abi=hard
                 -mfpu=fpv4-sp-d16
                 #-ffast-math
+                -MMD
                 )              
 
 #set(CMAKE_C_FLAGS_INIT  ${CORE_FLAGS})

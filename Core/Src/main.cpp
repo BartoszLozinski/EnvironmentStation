@@ -10,7 +10,6 @@
 #include "../../Peripherals/UART/HAL/UartIT.hpp"
 #include "../../Peripherals/UART/LineParser.hpp"
 
-#include "../../Devices/LM35.hpp"
 #include "../../Devices/LPS25HB.hpp"
 
 I2C_HandleTypeDef hi2c1;

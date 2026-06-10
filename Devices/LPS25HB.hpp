@@ -35,6 +35,6 @@ namespace Device
     public:
         
         explicit LPS25HB(Peripherals::I2CBase& i2c_);
-        [[nodiscard]] float ReadTemperature() const;
+        [[nodiscard]] std::optional<float> ReadTemperature() const;
     };
 }
