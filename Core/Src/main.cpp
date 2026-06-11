@@ -50,7 +50,7 @@ int main()
     HAL::SoftwareTimer btUartPollTimer{ 1 };
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
-    Peripherals::HAL::I2C i2c1{ hi2c1 };
+    Peripherals::HAL::I2C i2c1{ hi2c1, 100 };
     Device::LPS25HB lps25hb{ i2c1 };
 
     // LPS25HB test

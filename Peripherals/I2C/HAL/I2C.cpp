@@ -4,14 +4,20 @@ namespace Peripherals
 {
     namespace HAL
     {
-        I2C::I2C(I2C_HandleTypeDef& i2cHandle_)
+        I2C::I2C(I2C_HandleTypeDef& i2cHandle_, const uint32_t timeOut_)
             : i2cHandle(i2cHandle_)
+            , timeOut(timeOut_)
         {}
+
+        void I2C::SetTimeout(const uint32_t timeOut_)
+        {
+            timeOut = timeOut_;
+        }
 
         void I2C::Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value)
         {
             uint8_t data = value;
-            HAL_I2C_Mem_Write(&i2cHandle, deviceAddress, memoryAddress, 1, &data, sizeof(data), HAL_MAX_DELAY);
+            HAL_I2C_Mem_Write(&i2cHandle, deviceAddress, memoryAddress, 1, &data, sizeof(data), timeOut);
         }
 
         bool I2C::Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
@@ -26,7 +32,7 @@ namespace Peripherals
                                                 , memoryAddressSize
                                                 , buffer.data()
                                                 , buffer.size()
-                                                , HAL_MAX_DELAY);
+                                                , timeOut);
             return status == HAL_OK;
         }
     }
