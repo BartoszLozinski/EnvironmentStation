@@ -29,6 +29,7 @@ namespace Device
         
         Peripherals::I2CBase& i2c;
         [[nodiscard]] float RecalculateRawTemperature(const int16_t rawTemp) const;
+        [[nodiscard]] int32_t RecalculateRawPressure(const int32_t rawPressure) const;
         void WriteRegister(const uint8_t reg, uint8_t value);
         [[nodiscard]] std::optional<uint8_t> ReadRegister(const uint8_t reg) const;        
 
@@ -45,6 +46,7 @@ namespace Device
         explicit LPS25HB(Peripherals::I2CBase& i2c_);
         [[nodiscard]] std::optional<uint8_t> ReadWhoAmI() const;
         [[nodiscard]] std::optional<float> ReadTemperature() const;
+        [[nodiscard]] std::optional<int32_t> ReadPressure() const;
         void SetMeasurementFrequency(const MeasurementFrequency freq);
         void WakeUp();
     };

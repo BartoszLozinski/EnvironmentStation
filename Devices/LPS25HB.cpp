@@ -10,6 +10,12 @@ namespace Device
         return rawTemp / 480.0f + 42.5f; // *C
     }
     
+    int32_t LPS25HB::RecalculateRawPressure(const int32_t rawPressure) const
+    {
+        // Formula provided by the datasheet
+        return rawPressure / 4096; // hPa
+    }
+
     // TODO WRITE UNIT TESTS!!!
 
     void LPS25HB::WriteRegister(const uint8_t reg, const uint8_t value)
@@ -34,12 +40,24 @@ namespace Device
 
     std::optional<float> LPS25HB::ReadTemperature() const
     {
+
+        //TODO: Get rid of magic numbers
         int16_t rawTemp = 0;
         if (i2c.Read(Registers::ADDR, Registers::TEMP_OUT_L | 0x80, std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawTemp), sizeof(rawTemp))))
             return RecalculateRawTemperature(rawTemp);
         else
             return std::nullopt;
     };
+
+    std::optional<int32_t> LPS25HB::ReadPressure() const
+    {
+        //TODO Get rid of magic numbers
+        int32_t rawPressure = 0;
+        if (i2c.Read(Registers::ADDR, Registers::PRESS_OUT_XL | 0x80, std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawPressure), sizeof(rawPressure) - 1)))
+            return RecalculateRawPressure(rawPressure);
+        else
+            return std::nullopt;
+    }
 
     void LPS25HB::SetMeasurementFrequency(const MeasurementFrequency freq)
     {
