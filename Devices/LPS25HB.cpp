@@ -56,14 +56,14 @@ namespace Device
                 regValue = Registers::CTRL_REG1_ODR1;
                 break;
             case MeasurementFrequency::Hz12_5:
-                regValue = Registers::CTRL_REG1_ODR2;
+                regValue = Registers::CTRL_REG1_ODR1 | Registers::CTRL_REG1_ODR0;
                 break;
             case MeasurementFrequency::Hz25:
-                regValue = Registers::CTRL_REG1_ODR2 | Registers::CTRL_REG1_ODR0;
+                regValue = Registers::CTRL_REG1_ODR2;
                 break;
         }
-        // Preserve PD (power) bit when changing ODR bits: read-modify-write
-        constexpr uint8_t ODR_MASK = Registers::CTRL_REG1_ODR2 | Registers::CTRL_REG1_ODR1 | Registers::CTRL_REG1_ODR0;
+
+        static constexpr uint8_t ODR_MASK = Registers::CTRL_REG1_ODR2 | Registers::CTRL_REG1_ODR1 | Registers::CTRL_REG1_ODR0;
         uint8_t current = 0;
         if (auto curOpt = ReadRegister(Registers::CTRL_REG1); curOpt.has_value())
             current = curOpt.value();
@@ -74,7 +74,6 @@ namespace Device
 
     void LPS25HB::WakeUp()
     {
-        // Set PD bit without clearing other CTRL_REG1 bits (like ODR)
         uint8_t current = 0;
         if (auto curOpt = ReadRegister(Registers::CTRL_REG1); curOpt.has_value())
             current = curOpt.value();

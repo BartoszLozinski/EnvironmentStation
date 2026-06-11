@@ -108,7 +108,7 @@ int main()
         static constexpr char successMsg[] = "LPS25HB Found!\r\n";
         uart2.Transmit(reinterpret_cast<const uint8_t*>(successMsg), strlen(successMsg));
         lps25hb.WakeUp();
-        //lps25hb.SetMeasurementFrequency(Device::LPS25HB::MeasurementFrequency::Hz25);
+        lps25hb.SetMeasurementFrequency(Device::LPS25HB::MeasurementFrequency::Hz25);
         HAL_Delay(100); //TODO - get rid to blocking delay
 
         /*int16_t temp = 0;
