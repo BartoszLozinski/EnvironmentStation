@@ -27,6 +27,8 @@ namespace Device
             static constexpr uint16_t CTRL_REG1_ODR0 = 0x10;
         };
         
+        static constexpr uint32_t i2cTimeOut = 100;
+
         Peripherals::I2CBase& i2c;
         [[nodiscard]] float RecalculateRawTemperature(const int16_t rawTemp) const;
         [[nodiscard]] int32_t RecalculateRawPressure(const int32_t rawPressure) const;

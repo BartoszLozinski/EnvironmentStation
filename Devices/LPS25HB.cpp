@@ -20,17 +20,16 @@ namespace Device
 
     void LPS25HB::WriteRegister(const uint8_t reg, const uint8_t value)
     {
-        i2c.Write(Registers::ADDR, reg, value);
+        i2c.Write(Registers::ADDR, reg, value, i2cTimeOut);
     }
 
     std::optional<uint8_t> LPS25HB::ReadRegister(const uint8_t reg) const
     {
         uint8_t result = 0;
-        if (i2c.Read(Registers::ADDR, reg, std::span<uint8_t>(&result, sizeof(result))))
+        if (i2c.Read(Registers::ADDR, reg, std::span<uint8_t>(&result, sizeof(result)), i2cTimeOut))
             return result;
-        else
-            return std::nullopt;
-
+            
+        return std::nullopt;
     };
 
     std::optional<uint8_t> LPS25HB::ReadWhoAmI() const
@@ -43,7 +42,11 @@ namespace Device
 
         //TODO: Get rid of magic numbers
         int16_t rawTemp = 0;
-        if (i2c.Read(Registers::ADDR, Registers::TEMP_OUT_L | 0x80, std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawTemp), sizeof(rawTemp))))
+        if (i2c.Read(Registers::ADDR
+                    , Registers::TEMP_OUT_L | 0x80
+                    , std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawTemp)
+                    , sizeof(rawTemp))
+                    , i2cTimeOut))
             return RecalculateRawTemperature(rawTemp);
         else
             return std::nullopt;
@@ -53,10 +56,16 @@ namespace Device
     {
         //TODO Get rid of magic numbers
         int32_t rawPressure = 0;
-        if (i2c.Read(Registers::ADDR, Registers::PRESS_OUT_XL | 0x80, std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawPressure), sizeof(rawPressure) - 1)))
+        if (i2c.Read(Registers::ADDR
+            , Registers::PRESS_OUT_XL | 0x80
+            , std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawPressure)
+            , sizeof(rawPressure) - 1)
+            , i2cTimeOut))
+        {
             return RecalculateRawPressure(rawPressure);
-        else
-            return std::nullopt;
+        }
+
+        return std::nullopt;   
     }
 
     void LPS25HB::SetMeasurementFrequency(const MeasurementFrequency freq)

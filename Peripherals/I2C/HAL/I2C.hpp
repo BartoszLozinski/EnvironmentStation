@@ -14,11 +14,10 @@ namespace Peripherals
         {
         private:
             I2C_HandleTypeDef& i2cHandle;
-            int32_t timeOut = HAL_MAX_DELAY;
 
         public:
-            void Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value) override;
-            [[nodiscard]] bool Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) override;
+            void Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value, const uint32_t timeOut = HAL_MAX_DELAY) override;
+            [[nodiscard]] bool Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer, const uint32_t timeout = HAL_MAX_DELAY) override;
             void SetTimeout(const uint32_t timeOut_);
 
             I2C() = delete;
@@ -27,7 +26,7 @@ namespace Peripherals
             I2C& operator=(const I2C&) = delete;
             I2C& operator=(I2C&&) = delete;
             ~I2C() = default;
-            explicit I2C(I2C_HandleTypeDef& i2cHandle_, const uint32_t timeOut_ = HAL_MAX_DELAY);
+            explicit I2C(I2C_HandleTypeDef& i2cHandle_);
         };
     }
 }
