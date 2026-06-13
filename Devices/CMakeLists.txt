@@ -2,7 +2,8 @@ set(target_name Devices)
 
 set(${target_name}_src  LPS25HB.cpp)
 
-set(${target_name}_hpp  LPS25HB.hpp)
+set(${target_name}_hpp  LPS25HB.hpp
+                        Measurement.hpp)
 
 add_library(${target_name}  STATIC)
 

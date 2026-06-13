@@ -39,11 +39,10 @@ namespace Device
 
     std::optional<float> LPS25HB::ReadTemperature() const
     {
-
-        //TODO: Get rid of magic numbers
+        static constexpr uint8_t AUTO_INCREMENT = 0x80; //TEMP_OUT_L and TEMP_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
         int16_t rawTemp = 0;
         if (i2c.Read(Registers::ADDR
-                    , Registers::TEMP_OUT_L | 0x80
+                    , Registers::TEMP_OUT_L | AUTO_INCREMENT
                     , std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawTemp)
                     , sizeof(rawTemp))
                     , i2cTimeOut))
@@ -54,10 +53,10 @@ namespace Device
 
     std::optional<int32_t> LPS25HB::ReadPressure() const
     {
-        //TODO Get rid of magic numbers
+        static constexpr uint8_t AUTO_INCREMENT = 0x80; //PRESS_OUT_XL, PRESS_OUT_L, and PRESS_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
         int32_t rawPressure = 0;
         if (i2c.Read(Registers::ADDR
-            , Registers::PRESS_OUT_XL | 0x80
+            , Registers::PRESS_OUT_XL | AUTO_INCREMENT
             , std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawPressure)
             , sizeof(rawPressure) - 1)
             , i2cTimeOut))
