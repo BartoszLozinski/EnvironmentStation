@@ -48,6 +48,7 @@ int main()
     HAL::SoftwareTimer uart2PollTimer{ 1 };
     HAL::SoftwareTimer btUartResetTimer{ 2000 };
     HAL::SoftwareTimer btUartPollTimer{ 1 };
+    HAL::SoftwareTimer lps25hbPollTimer{ 500 };
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
     Peripherals::HAL::I2C i2c1{ hi2c1 };
@@ -67,38 +68,13 @@ int main()
         lps25hb.WakeUp();
         lps25hb.SetMeasurementFrequency(Device::LPS25HB::MeasurementFrequency::Hz25);
         HAL_Delay(100); //TODO - get rid to blocking delay
-
-        if (const auto temp = lps25hb.ReadTemperature(); temp.has_value())
-        {
-            char messageBuffer[32];
-            snprintf(messageBuffer, sizeof(messageBuffer), "Temp LPS Class: %.2f C\r\n", temp.value());
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
-        }
-        else
-        {
-            char errorBuffer[32];
-            snprintf(errorBuffer, sizeof(errorBuffer), "Temp read error\r\n");
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
-        }
-
-        if (const auto pressure = lps25hb.ReadPressure(); pressure.has_value())
-        {
-            char messageBuffer[32];
-            snprintf(messageBuffer, sizeof(messageBuffer), "Pressure LPS Class: %li hPa\r\n", pressure.value());
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
-        }
-        else
-        {
-            char errorBuffer[32];
-            snprintf(errorBuffer, sizeof(errorBuffer), "Pressure read error\r\n");
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
-        }
     }
     else
     {
         char buffer[32];
         snprintf(buffer, sizeof(buffer), "Error: (x%02X)\r\n", whoAmI.value());
         uart2.Transmit(reinterpret_cast<const uint8_t*>(buffer), strlen(buffer));
+        return 1;
     }
 
 
@@ -141,7 +117,39 @@ int main()
         }
 
         // End of UART Test
-    
+
+        // TEST of LPS25HB
+
+        if (lps25hbPollTimer.IsExpired())
+        {
+            lps25hbPollTimer.Reset();
+            
+            if (const auto temp = lps25hb.ReadTemperature(); temp.has_value())
+            {
+                char messageBuffer[32];
+                snprintf(messageBuffer, sizeof(messageBuffer), "Temp LPS Class: %.2f C\r\n", temp.value());
+                uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
+            }
+            else
+            {
+                char errorBuffer[32];
+                snprintf(errorBuffer, sizeof(errorBuffer), "Temp read error\r\n");
+                uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
+            }
+
+            if (const auto pressure = lps25hb.ReadPressure(); pressure.has_value())
+            {
+                char messageBuffer[32];
+                snprintf(messageBuffer, sizeof(messageBuffer), "Pressure LPS Class: %li hPa\r\n", pressure.value());
+                uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
+            }
+            else
+            {
+                char errorBuffer[32];
+                snprintf(errorBuffer, sizeof(errorBuffer), "Pressure read error\r\n");
+                uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
+            }
+        }
     }
 }
 
