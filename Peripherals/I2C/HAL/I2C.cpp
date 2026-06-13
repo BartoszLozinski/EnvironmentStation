@@ -9,13 +9,13 @@ namespace Peripherals
         {}
 
 
-        void I2C::Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value, const uint32_t timeOut)
+        void I2C::Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value)
         {
             uint8_t data = value;
             HAL_I2C_Mem_Write(&i2cHandle, deviceAddress, memoryAddress, 1, &data, sizeof(data), timeOut);
         }
 
-        bool I2C::Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer, const uint32_t timeout)
+        bool I2C::Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
         {
             if (buffer.empty())
                 return false;
@@ -27,8 +27,13 @@ namespace Peripherals
                                                 , memoryAddressSize
                                                 , buffer.data()
                                                 , buffer.size()
-                                                , timeout);
+                                                , timeOut);
             return status == HAL_OK;
+        }
+
+        void I2C::SetTimeout(const uint32_t timeOut_)
+        {
+            timeOut = timeOut_;
         }
     }
 }

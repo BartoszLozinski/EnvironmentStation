@@ -52,6 +52,7 @@ int main()
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
     Peripherals::HAL::I2C i2c1{ hi2c1 };
+    i2c1.SetTimeout(100);
     Device::LPS25HB lps25hb{ i2c1 };
 
     // LPS25HB test
@@ -123,7 +124,7 @@ int main()
         if (lps25hbPollTimer.IsExpired())
         {
             lps25hbPollTimer.Reset();
-            
+
             if (const auto temp = lps25hb.ReadTemperature(); temp.has_value())
             {
                 char messageBuffer[32];

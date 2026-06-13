@@ -11,7 +11,7 @@ namespace Peripherals
     {
     public:
         virtual ~I2CBase() = default;
-        virtual void Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value, const uint32_t timeOut = 1000 /* ms */) = 0;
-        [[nodiscard]] virtual bool Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer, const uint32_t timeout = 1000 /* ms */) = 0;
+        virtual void Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value) = 0;
+        [[nodiscard]] virtual bool Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) = 0;
     };
 }

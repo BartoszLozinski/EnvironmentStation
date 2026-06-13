@@ -20,13 +20,13 @@ namespace Device
 
     void LPS25HB::WriteRegister(const uint8_t reg, const uint8_t value)
     {
-        i2c.Write(Registers::ADDR, reg, value, i2cTimeOut);
+        i2c.Write(Registers::ADDR, reg, value);
     }
 
     std::optional<uint8_t> LPS25HB::ReadRegister(const uint8_t reg) const
     {
         uint8_t result = 0;
-        if (i2c.Read(Registers::ADDR, reg, std::span<uint8_t>(&result, sizeof(result)), i2cTimeOut))
+        if (i2c.Read(Registers::ADDR, reg, std::span<uint8_t>(&result, sizeof(result))))
             return result;
             
         return std::nullopt;
@@ -44,8 +44,7 @@ namespace Device
         if (i2c.Read(Registers::ADDR
                     , Registers::TEMP_OUT_L | AUTO_INCREMENT
                     , std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawTemp)
-                    , sizeof(rawTemp))
-                    , i2cTimeOut))
+                    , sizeof(rawTemp))))
             return RecalculateRawTemperature(rawTemp);
         else
             return std::nullopt;
@@ -58,8 +57,7 @@ namespace Device
         if (i2c.Read(Registers::ADDR
             , Registers::PRESS_OUT_XL | AUTO_INCREMENT
             , std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawPressure)
-            , sizeof(rawPressure) - 1)
-            , i2cTimeOut))
+            , sizeof(rawPressure) - 1)))
         {
             return RecalculateRawPressure(rawPressure);
         }
