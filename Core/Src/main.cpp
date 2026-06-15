@@ -7,6 +7,7 @@
 
 #include "../../Peripherals/Timer/HAL/SoftwareTimer.hpp"
 #include "../../Peripherals/I2C/HAL/I2C.hpp"
+#include "../../Peripherals/I2C/HAL/I2C_IT.hpp"
 #include "../../Peripherals/UART/HAL/Uart.hpp"
 #include "../../Peripherals/UART/HAL/UartIT.hpp"
 #include "../../Peripherals/UART/LineParser.hpp"
@@ -28,6 +29,8 @@ static void MX_I2C1_Init(void);
 //END - CUBE GENERATED
 
 Peripherals::HAL::UartIT uart2{ huart2 };
+// Global pointer used by the C HAL callback to forward interrupts to the C++ instance.
+static Peripherals::HAL::I2C_IT* g_i2c1IT = nullptr;
 
 int main()
 {
@@ -55,6 +58,10 @@ int main()
     i2c1.SetTimeout(100);
     Device::LPS25HB lps25hb{ i2c1 };
 
+    // I2C interrupt-driven wrapper instance - construct after HAL init
+    Peripherals::HAL::I2C_IT i2c1IT{ hi2c1 };
+    g_i2c1IT = &i2c1IT;
+
     // LPS25HB test
 
     static constexpr char testMsg[] = "LPS25HB test:\r\n";
@@ -78,6 +85,7 @@ int main()
         return 1;
     }
 
+    bool transferScheduled = false;
 
     while (true)
     {
@@ -121,6 +129,7 @@ int main()
 
         // TEST of LPS25HB
 
+        /*
         if (lps25hbPollTimer.IsExpired())
         {
             lps25hbPollTimer.Reset();
@@ -150,10 +159,42 @@ int main()
                 snprintf(errorBuffer, sizeof(errorBuffer), "Pressure read error\r\n");
                 uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
             }
+        }*/
+
+        //Interrupts tests for temperature
+        static constexpr uint16_t ADDR = 0xBA;
+        static constexpr uint16_t TEMP_OUT_L = 0x2B;
+        static constexpr uint8_t AUTO_INCREMENT = 0x80; //TEMP_OUT_L and TEMP_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
+
+        if (!transferScheduled && lps25hbPollTimer.IsExpired())
+        {
+            transferScheduled = i2c1IT.Read(ADDR, TEMP_OUT_L | AUTO_INCREMENT);
         }
+
+        if (i2c1IT.GetState() == Peripherals::I2CState::Done && lps25hbPollTimer.IsExpired())
+        {
+            transferScheduled = false;
+            const auto bufferOpt = i2c1IT.GetBuffer();
+            if (bufferOpt.has_value())
+            {
+                lps25hbPollTimer.Reset();
+                const auto buffer = *bufferOpt;
+                int16_t tempRaw = (static_cast<int16_t>(buffer[1]) << 8) | buffer[0];
+                float tempC = tempRaw / 480.0f + 42.5f; // according to datasheet
+                char messageBuffer[32];
+                snprintf(messageBuffer, sizeof(messageBuffer), "Temp LPS IT: %.2f C\r\n", tempC);
+                uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
+            }
+            else
+            {
+                char errorBuffer[32];
+                snprintf(errorBuffer, sizeof(errorBuffer), "Temp read error\r\n");
+                uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
+            }
+        }
+
     }
 }
-
 
 //Stm32CubeIDE generated functions
 void SystemClock_Config(void)
@@ -324,6 +365,15 @@ extern "C" void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     if (huart->Instance == USART2)
     {
         uart2.RxCpltCallback();
+    }
+}
+
+extern "C" void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    if (hi2c->Instance == I2C1)
+    {
+        if (g_i2c1IT)
+            g_i2c1IT->OnRxComplete();
     }
 }
 

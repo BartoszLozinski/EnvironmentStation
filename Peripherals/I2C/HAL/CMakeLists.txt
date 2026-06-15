@@ -1,10 +1,12 @@
 set(target_name I2C_HAL)
 
 set(${target_name}_src  I2C.cpp
+                        I2C_IT.cpp
 )
 
 set(${target_name}_hpp  ../I2CBase.hpp
                         I2C.hpp
+                        I2C_IT.hpp
 )
 
 add_library(${target_name} STATIC)
