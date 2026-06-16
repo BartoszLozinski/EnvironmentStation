@@ -30,7 +30,7 @@ static void MX_I2C1_Init(void);
 
 Peripherals::HAL::UartIT uart2{ huart2 };
 // Global pointer used by the C HAL callback to forward interrupts to the C++ instance.
-static Peripherals::HAL::I2C_IT* g_i2c1IT = nullptr;
+static Peripherals::HAL::I2C_IT<4>* g_i2c1IT = nullptr;
 
 int main()
 {
@@ -59,7 +59,7 @@ int main()
     Device::LPS25HB lps25hb{ i2c1 };
 
     // I2C interrupt-driven wrapper instance - construct after HAL init
-    Peripherals::HAL::I2C_IT i2c1IT{ hi2c1 };
+    Peripherals::HAL::I2C_IT<4> i2c1IT{ hi2c1 };
     g_i2c1IT = &i2c1IT;
 
     // LPS25HB test
