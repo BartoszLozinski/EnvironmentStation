@@ -44,12 +44,6 @@ namespace Peripherals
                 state = I2CState::Done;
         }
 
-        void I2C_IT::Acknowledge()
-        {
-            if (state == I2CState::Done || state == I2CState::Error)
-                state = I2CState::Idle;
-        }
-
         std::optional<std::array<uint8_t, 4>> I2C_IT::GetResult()
         {
             if (state == I2CState::Done)
