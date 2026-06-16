@@ -5,6 +5,7 @@ set(${target_name}_src  I2C.cpp
 )
 
 set(${target_name}_hpp  ../I2CBase.hpp
+                        ../I2CBase_IT.hpp
                         I2C.hpp
                         I2C_IT.hpp
 )

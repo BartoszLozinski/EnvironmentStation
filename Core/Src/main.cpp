@@ -168,13 +168,13 @@ int main()
 
         if (!transferScheduled && lps25hbPollTimer.IsExpired())
         {
-            transferScheduled = i2c1IT.Read(ADDR, TEMP_OUT_L | AUTO_INCREMENT);
+            transferScheduled = i2c1IT.Read(ADDR, TEMP_OUT_L | AUTO_INCREMENT) == Peripherals::I2CResult::Success;
         }
 
-        if (i2c1IT.GetState() == Peripherals::I2CState::Done && lps25hbPollTimer.IsExpired())
+        if ((i2c1IT.GetState() == Peripherals::I2CState::Done || i2c1IT.GetState() == Peripherals::I2CState::Error) && lps25hbPollTimer.IsExpired())
         {
             transferScheduled = false;
-            const auto bufferOpt = i2c1IT.GetBuffer();
+            const auto bufferOpt = i2c1IT.GetResult();
             if (bufferOpt.has_value())
             {
                 lps25hbPollTimer.Reset();
@@ -192,7 +192,6 @@ int main()
                 uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
             }
         }
-
     }
 }
 

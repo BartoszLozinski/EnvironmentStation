@@ -6,41 +6,62 @@ namespace Peripherals
     {
         I2C_IT::I2C_IT(I2C_HandleTypeDef& i2cHandle_) : i2cHandle(i2cHandle_) {}
 
-        void I2C_IT::Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value)
-        {
-            // copy value into internal TX buffer so its address remains valid
-            tXBuffer[0] = value;
-            HAL_I2C_Mem_Write_IT(&i2cHandle, deviceAddress, memoryAddress, I2C_MEMADD_SIZE_8BIT, tXBuffer.data(), 1);
-        }
-
-        bool I2C_IT::Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer /* = std::span<uint8_t>(rXBuffer, sizeof(rXBuffer)) */)
+        I2CResult I2C_IT::Write(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
         {
             if (state != I2CState::Idle)
-                return false;
+                return I2CResult::Busy;
 
-            state = I2CState::RxBusy;
-            return HAL_I2C_Mem_Read_IT(&i2cHandle
-                                      , deviceAddress
-                                      , memoryAddress
-                                      , I2C_MEMADD_SIZE_8BIT
-                                      , buffer.data()
-                                      , buffer.size()) == HAL_OK;
+            const bool success = HAL_I2C_Mem_Write_IT( &i2cHandle
+                                                    , deviceAddress
+                                                    , memoryAddress
+                                                    , I2C_MEMADD_SIZE_8BIT
+                                                    , buffer.data()
+                                                    , buffer.size()) == HAL_OK;
+
+            state = success ? I2CState::TxBusy : I2CState::Error;
+            return success ? I2CResult::Success : I2CResult::Error;
+        }
+
+        I2CResult I2C_IT::Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
+        {
+            if (state != I2CState::Idle)
+                return I2CResult::Busy;
+
+            const bool success = HAL_I2C_Mem_Read_IT(&i2cHandle
+                                                    , deviceAddress
+                                                    , memoryAddress
+                                                    , I2C_MEMADD_SIZE_8BIT
+                                                    , buffer.data()
+                                                    , buffer.size()) == HAL_OK;
+
+            state = success ? I2CState::RxBusy : I2CState::Error;
+            return success ? I2CResult::Success : I2CResult::Error;
         }
 
         void I2C_IT::OnRxComplete()
         {
             if (state == I2CState::RxBusy)
-            {
                 state = I2CState::Done;
-            }
         }
 
-        std::optional<std::array<uint8_t, 4>> I2C_IT::GetBuffer()
+        void I2C_IT::Acknowledge()
+        {
+            if (state == I2CState::Done || state == I2CState::Error)
+                state = I2CState::Idle;
+        }
+
+        std::optional<std::array<uint8_t, 4>> I2C_IT::GetResult()
         {
             if (state == I2CState::Done)
             {
                 state = I2CState::Idle;
                 return rXBuffer;
+            }
+
+            if (state == I2CState::Error)
+            {
+                state = I2CState::Idle;
+                return std::nullopt;
             }
 
             return std::nullopt;
