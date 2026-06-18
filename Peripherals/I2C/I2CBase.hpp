@@ -2,16 +2,20 @@
 #include <cstdint>
 #include <span>
 
-// TODO test dynamic polymorphism vs CRTP later
-// Start with dynamic polymorphism first
-
 namespace Peripherals
 {
+    enum class I2CResult
+    {
+        Success,
+        Busy,
+        Error,        
+    };
+
     class I2CBase
     {
     public:
         virtual ~I2CBase() = default;
-        virtual void Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value) = 0;
-        [[nodiscard]] virtual bool Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) = 0;
+        virtual I2CResult Write(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) = 0;
+        [[nodiscard]] virtual I2CResult Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) = 0;
     };
 }

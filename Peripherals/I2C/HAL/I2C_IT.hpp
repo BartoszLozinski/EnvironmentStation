@@ -1,6 +1,6 @@
 #pragma once
 
-#include "I2CBase_IT.hpp"
+#include "I2CBase.hpp"
 #include <array>
 #include <optional>
 #include <span>
@@ -26,7 +26,7 @@ namespace Peripherals
     namespace HAL
     {
         template<std::size_t BufferSize>
-        class I2C_IT : public I2CBase_IT
+        class I2C_IT : public I2CBase
         {
         private:
             I2C_HandleTypeDef& i2cHandle;

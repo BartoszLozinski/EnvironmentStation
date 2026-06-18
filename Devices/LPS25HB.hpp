@@ -31,7 +31,7 @@ namespace Device
         [[nodiscard]] float RecalculateRawTemperature(const int16_t rawTemp) const;
         [[nodiscard]] int32_t RecalculateRawPressure(const int32_t rawPressure) const;
         void WriteRegister(const uint8_t reg, uint8_t value);
-        [[nodiscard]] std::optional<uint8_t> ReadRegister(const uint8_t reg) const;        
+        [[nodiscard]] std::optional<uint8_t> ReadRegister(uint8_t reg) const;        
 
     public:
         enum class MeasurementFrequency

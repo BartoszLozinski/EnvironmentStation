@@ -8,8 +8,8 @@
 
 struct I2CMock : public Peripherals::I2CBase
 {
-    MOCK_METHOD(void, Write, (const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value), (override));
-    MOCK_METHOD(bool, Read, (const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer), (override));
+    MOCK_METHOD(Peripherals::I2CResult, Write, (const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer), (override));
+    MOCK_METHOD(Peripherals::I2CResult, Read, (const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer), (override));
 };
 
 class LPS25HBFixture : public ::testing::Test
@@ -29,6 +29,6 @@ TEST_F(LPS25HBFixture, ReadTemperature_Success)
                               testing::Truly([&](std::span<uint8_t> s) {
                                   return s.size() == 2 && s[0] == mockBuffer[0] && s[1] == mockBuffer[1];
                               })))
-        .WillOnce(testing::Return(true));
+        .WillOnce(testing::Return(Peripherals::I2CResult::Success));
     ASSERT_TRUE(lps25hb.ReadTemperature().has_value());
 }

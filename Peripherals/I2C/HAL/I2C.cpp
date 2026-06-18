@@ -9,26 +9,32 @@ namespace Peripherals
         {}
 
 
-        void I2C::Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value)
+        I2CResult I2C::Write(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
         {
-            uint8_t data = value;
-            HAL_I2C_Mem_Write(&i2cHandle, deviceAddress, memoryAddress, 1, &data, sizeof(data), timeOut);
+            static constexpr uint16_t memoryAddressSize = 1;
+
+            return HAL_I2C_Mem_Write(&i2cHandle
+                                    , deviceAddress
+                                    , memoryAddress
+                                    , memoryAddressSize
+                                    , buffer.data()
+                                    , buffer.size()
+                                    , timeOut) == HAL_OK ? I2CResult::Success : I2CResult::Error;
         }
 
-        bool I2C::Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
+        I2CResult I2C::Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
         {
             if (buffer.empty())
-                return false;
+                return I2CResult::Error;
 
             static constexpr uint16_t memoryAddressSize = 1;
-            const auto status = HAL_I2C_Mem_Read( &i2cHandle
+            return HAL_I2C_Mem_Read( &i2cHandle
                                                 , deviceAddress
                                                 , memoryAddress
                                                 , memoryAddressSize
                                                 , buffer.data()
                                                 , buffer.size()
-                                                , timeOut);
-            return status == HAL_OK;
+                                                , timeOut) == HAL_OK ? I2CResult::Success : I2CResult::Error;
         }
 
         void I2C::SetTimeout(const uint32_t timeOut_)

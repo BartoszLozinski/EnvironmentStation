@@ -17,8 +17,8 @@ namespace Peripherals
             uint32_t timeOut{ HAL_MAX_DELAY };
 
         public:
-            void Write(const uint16_t deviceAddress, const uint16_t memoryAddress, const uint8_t value) override;
-            [[nodiscard]] bool Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) override;
+            I2CResult Write(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) override;
+            [[nodiscard]] I2CResult Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) override;
 
             I2C() = delete;
             I2C(const I2C&) = delete;
