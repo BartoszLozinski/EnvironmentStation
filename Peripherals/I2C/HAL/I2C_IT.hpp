@@ -12,21 +12,12 @@ extern "C"
 
 namespace Peripherals
 {
-    enum class I2CState
-    {
-        Idle,
-        RxBusy,
-        TxBusy,
-        Done,
-        Error
-    };
-
     // TODO Make it clear
     // think about architecture refactor?
     namespace HAL
     {
         template<std::size_t BufferSize>
-        class I2C_IT : public I2CBase
+        class I2C_IT : public I2CBase_IT
         {
         private:
             I2C_HandleTypeDef& i2cHandle;
@@ -50,9 +41,9 @@ namespace Peripherals
             {
                 return Read(deviceAddress, memoryAddress, std::span<uint8_t>(rXBuffer.data(), rXBuffer.size()));
             }
-            void OnRxComplete();
-            std::optional<std::span<uint8_t>> GetResult();
-            Peripherals::I2CState GetState() const { return state; }
+            void OnRxComplete() override;
+            std::optional<std::span<uint8_t>> GetResult() override;
+            Peripherals::I2CState GetState() const override { return state; }
 
         };
     }

@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <span>
+#include <optional>
 
 namespace Peripherals
 {
@@ -9,6 +10,15 @@ namespace Peripherals
         Success,
         Busy,
         Error,        
+    };
+
+    enum class I2CState
+    {
+        Idle,
+        RxBusy,
+        TxBusy,
+        Done,
+        Error
     };
 
     class I2CBase
@@ -24,5 +34,7 @@ namespace Peripherals
     public:
         virtual ~I2CBase_IT() = default;
         virtual void OnRxComplete() = 0;
+        virtual std::optional<std::span<uint8_t>> GetResult() = 0;
+        virtual Peripherals::I2CState GetState() const = 0;
     };
 }
