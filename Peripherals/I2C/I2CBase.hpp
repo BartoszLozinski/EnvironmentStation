@@ -18,4 +18,11 @@ namespace Peripherals
         virtual I2CResult Write(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) = 0;
         [[nodiscard]] virtual I2CResult Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) = 0;
     };
+
+    class I2CBase_IT : public I2CBase
+    {
+    public:
+        virtual ~I2CBase_IT() = default;
+        virtual void OnRxComplete() = 0;
+    };
 }

@@ -49,12 +49,12 @@ namespace Peripherals
         }
 
         template<std::size_t BufferSize>
-        std::optional<std::array<uint8_t, BufferSize>> I2C_IT<BufferSize>::GetResult()
+        std::optional<std::span<uint8_t>> I2C_IT<BufferSize>::GetResult()
         {
             if (state == I2CState::Done)
             {
                 state = I2CState::Idle;
-                return rXBuffer;
+                return std::span<uint8_t>(rXBuffer.data(), rXBuffer.size());
             }
 
             if (state == I2CState::Error)
