@@ -13,6 +13,7 @@
 #include "../../Peripherals/UART/LineParser.hpp"
 
 #include "../../Devices/LPS25HB.hpp"
+#include "../../Devices/LPS25HB_Async.hpp"
 
 I2C_HandleTypeDef hi2c1;
 UART_HandleTypeDef huart1;
@@ -56,10 +57,11 @@ int main()
     UcCommunication::LineParser btLineParser{ btHC06Uart };
     Peripherals::HAL::I2C i2c1{ hi2c1 };
     i2c1.SetTimeout(100);
-    Device::LPS25HB lps25hb{ i2c1 };
-
     // I2C interrupt-driven wrapper instance - construct after HAL init
     Peripherals::HAL::I2C_IT<4> i2c1IT{ hi2c1 };
+    Device::LPS25HB lps25hb{ i2c1 };
+    Device::LPS25HB_Async lps25hbAsync{ i2c1IT };
+
     g_i2c1IT = &i2c1IT;
 
     // LPS25HB test
@@ -85,7 +87,7 @@ int main()
         return 1;
     }
 
-    bool transferScheduled = false;
+    //bool transferScheduled = false;
 
     while (true)
     {
@@ -162,6 +164,7 @@ int main()
         }*/
 
         //Interrupts tests for temperature
+        /*
         static constexpr uint16_t ADDR = 0xBA;
         static constexpr uint16_t TEMP_OUT_L = 0x2B;
         static constexpr uint8_t AUTO_INCREMENT = 0x80; //TEMP_OUT_L and TEMP_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
@@ -192,6 +195,21 @@ int main()
                 uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
             }
         }
+        */
+        if (const auto result = lps25hbAsync.ReadWhoAmI(); result.has_value() && result.value() == 0xBD)
+        {
+            static constexpr char successMsg[] = "LPS25HB Found!\r\n";
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(successMsg), strlen(successMsg));
+            //lps25hb.WakeUp();
+            //lps25hb.SetMeasurementFrequency(Device::LPS25HB::MeasurementFrequency::Hz25);
+            //HAL_Delay(100); //TODO - get rid to blocking delay
+        }
+        /*else
+        {
+            char buffer[32];
+            snprintf(buffer, sizeof(buffer), "ReadingWhoAmI not finished\r\n");
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(buffer), strlen(buffer));
+        }*/
     }
 }
 
