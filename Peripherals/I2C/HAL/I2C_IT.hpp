@@ -42,6 +42,7 @@ namespace Peripherals
                 return Read(deviceAddress, memoryAddress, std::span<uint8_t>(rXBuffer.data(), rXBuffer.size()));
             }
             void OnRxComplete() override;
+            void NotifyDataIsRead() override;
             std::optional<std::span<uint8_t>> GetResult() override;
             Peripherals::I2CState GetState() const override { return state; }
 

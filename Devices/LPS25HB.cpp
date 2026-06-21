@@ -44,7 +44,7 @@ namespace Device
         if (i2c.Read(Registers::ADDR
                     , Registers::TEMP_OUT_L | AUTO_INCREMENT
                     , std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawTemp)
-                    , sizeof(rawTemp))) == Peripherals::I2CResult::Success)
+                                        , sizeof(rawTemp))) == Peripherals::I2CResult::Success)
         {
             return RecalculateRawTemperature(rawTemp);
         }

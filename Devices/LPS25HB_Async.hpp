@@ -37,13 +37,15 @@ namespace Device
         
         Peripherals::I2CBase_IT& i2c;
         [[nodiscard]] float RecalculateRawTemperature(const int16_t rawTemp) const;
+        void ReadRawTemperature();
         [[nodiscard]] int32_t RecalculateRawPressure(const int32_t rawPressure) const;
         void WriteRegister(const uint8_t reg, uint8_t value);
         [[nodiscard]] std::optional<uint8_t> ReadRegister(uint8_t reg);
         State state = State::Idle;
-        uint8_t readRegisterBuffer = 0;
-        uint16_t rawTempBuffer = 0;
-        uint32_t rawPressureBuffer = 0;
+        uint8_t readRegisterBuffer{ 0 }; 
+        bool readingRawTemperatureCompleted{ false };
+        std::array<uint8_t, 2> rawTempBuffer{};
+        uint32_t rawPressureBuffer{ 0 };
 
     public:
         enum class MeasurementFrequency
@@ -57,7 +59,7 @@ namespace Device
 
         LPS25HB_Async(Peripherals::I2CBase_IT& i2c_);
         [[nodiscard]] std::optional<uint8_t> ReadWhoAmI();
-        [[nodiscard]] std::optional<float> ReadTemperature() const;
+        [[nodiscard]] std::optional<float> ReadTemperature();
         [[nodiscard]] std::optional<int32_t> ReadPressure() const;
         void SetMeasurementFrequency(const MeasurementFrequency freq);
         void WakeUp();

@@ -196,19 +196,18 @@ int main()
             }
         }
         */
-        if (const auto result = lps25hbAsync.ReadWhoAmI(); result.has_value() && result.value() == 0xBD)
+        if (const auto result = lps25hbAsync.ReadTemperature(); result && lps25hbPollTimer.IsExpired())
         {
-            static constexpr char successMsg[] = "LPS25HB Found!\r\n";
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(successMsg), strlen(successMsg));
-            //lps25hb.WakeUp();
-            //lps25hb.SetMeasurementFrequency(Device::LPS25HB::MeasurementFrequency::Hz25);
-            //HAL_Delay(100); //TODO - get rid to blocking delay
+            lps25hbPollTimer.Reset();
+            char messageBuffer[32];
+            snprintf(messageBuffer, sizeof(messageBuffer), "Temp LPS IT: %.2f C\r\n", result.value());
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
         }
         /*else
         {
-            char buffer[32];
-            snprintf(buffer, sizeof(buffer), "ReadingWhoAmI not finished\r\n");
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(buffer), strlen(buffer));
+            char errorBuffer[32];
+            snprintf(errorBuffer, sizeof(errorBuffer), "Temp read error\r\n");
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
         }*/
     }
 }

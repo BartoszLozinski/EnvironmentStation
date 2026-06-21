@@ -66,6 +66,12 @@ namespace Peripherals
             return std::nullopt;
         }
 
+        template<std::size_t BufferSize>
+        void I2C_IT<BufferSize>::NotifyDataIsRead()
+        {
+            state = I2CState::Idle;
+        }
+
         template class I2C_IT<4>;
     }
 }
