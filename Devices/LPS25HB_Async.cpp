@@ -12,6 +12,12 @@ namespace Device
         return rawTemp / 480.0f + 42.5f; // *C
     }
 
+    int32_t LPS25HB_Async::RecalculateRawPressure(const int32_t rawPressure) const
+    {
+        // Formula provided by the datasheet
+        return rawPressure / 4096; // hPa
+    }
+
     std::optional<uint8_t> LPS25HB_Async::ReadRegister(const uint8_t reg)
     {
         if (state == State::Idle)
@@ -38,42 +44,23 @@ namespace Device
         return result;
     }
 
-    /*void LPS25HB_Async::ReadRawTemperature()
-    {
-        static constexpr uint8_t AUTO_INCREMENT = 0x80; //TEMP_OUT_L and TEMP_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
-        if (state == State::Idle)
-        {
-            state = i2c.Read(Registers::ADDR
-                            , Registers::TEMP_OUT_L | AUTO_INCREMENT
-                            , std::span<uint8_t>(reinterpret_cast<uint8_t*>(&rawTempBuffer)
-                                                , sizeof(rawTempBuffer))) == Peripherals::I2CResult::Success ? State::TransferScheduled : State::Error;
-        }//TODO create own RxReadCompleted
-        else if (i2c.GetState() == Peripherals::I2CState::Done)
-        {
-            state = State::Done;
-            readingRawTemperatureCompleted = true;
-        }
-    }*/
-
     // TO DO: Check if code can be cleaner, remove unnecessary overloads
 
     std::optional<float> LPS25HB_Async::ReadTemperature()
     {
-        //ReadRawTemperature();
-
         static constexpr uint8_t AUTO_INCREMENT = 0x80; //TEMP_OUT_L and TEMP_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
         if (state == State::Idle)
         {
             state = i2c.Read(Registers::ADDR
                             , Registers::TEMP_OUT_L | AUTO_INCREMENT
                             , std::span<uint8_t>(rawTempBuffer.data()
-                                                , rawTempBuffer.size())) == Peripherals::I2CResult::Success ? State::TransferScheduled : State::Error;
+                                                , rawTempBuffer.size())) == Peripherals::I2CResult::Success ? State::RxTempReading : State::Error;
         }//TODO create own RxReadCompleted
-        else if (i2c.GetState() == Peripherals::I2CState::Done)
+        else if (state == State::RxTempReading && i2c.GetState() == Peripherals::I2CState::Done)
         {
             //is state::Done necessary?
             i2c.NotifyDataIsRead();
-            state = State::Done;
+            //state = State::Done;
             const int16_t tempBuffer = (static_cast<int16_t>(rawTempBuffer[1]) << 8) | rawTempBuffer[0];
             state = State::Idle;
             return RecalculateRawTemperature(tempBuffer);
@@ -81,5 +68,27 @@ namespace Device
 
         return std::nullopt;
     }
+    
+    std::optional<int32_t> LPS25HB_Async::ReadPressure()
+    {
+        static constexpr uint8_t AUTO_INCREMENT = 0x80; //PRESS_OUT_XL, PRESS_OUT_L, and PRESS_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
+        if (state == State::Idle)
+        {
+            state = i2c.Read(Registers::ADDR
+                            , Registers::PRESS_OUT_XL | AUTO_INCREMENT
+                            , std::span<uint8_t>(rawPressureBuffer.data()
+                                                , rawPressureBuffer.size())) == Peripherals::I2CResult::Success ? State::RxPressureReading : State::Error;
+        }//TODO create own RxReadCompleted
+        else if (state == State::RxPressureReading && i2c.GetState() == Peripherals::I2CState::Done)
+        {
+            //is state::Done necessary?
+            i2c.NotifyDataIsRead();
+            //state = State::Done;
+            const uint32_t pressureBuffer = (static_cast<int16_t>(rawPressureBuffer[2]) << 16) | rawPressureBuffer[1] << 8 | rawPressureBuffer[0];
+            state = State::Idle;
+            return RecalculateRawPressure(pressureBuffer);
+        }
 
+        return std::nullopt;
+    }
 }

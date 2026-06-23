@@ -52,7 +52,9 @@ int main()
     HAL::SoftwareTimer uart2PollTimer{ 1 };
     HAL::SoftwareTimer btUartResetTimer{ 2000 };
     HAL::SoftwareTimer btUartPollTimer{ 1 };
-    HAL::SoftwareTimer lps25hbPollTimer{ 500 };
+    //HAL::SoftwareTimer lps25hbPollTimer{ 500 };
+    HAL::SoftwareTimer temperatureReadingTimer{ 500 };
+    HAL::SoftwareTimer pressureReadingTimer{ 500 };
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
     Peripherals::HAL::I2C i2c1{ hi2c1 };
@@ -196,11 +198,19 @@ int main()
             }
         }
         */
-        if (const auto result = lps25hbAsync.ReadTemperature(); result && lps25hbPollTimer.IsExpired())
+        if (const auto result = lps25hbAsync.ReadTemperature(); result && temperatureReadingTimer.IsExpired())
         {
-            lps25hbPollTimer.Reset();
+            temperatureReadingTimer.Reset();
             char messageBuffer[32];
             snprintf(messageBuffer, sizeof(messageBuffer), "Temp LPS IT: %.2f C\r\n", result.value());
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
+        }
+        
+        if (const auto result = lps25hbAsync.ReadPressure(); result && pressureReadingTimer.IsExpired())
+        {
+            pressureReadingTimer.Reset();
+            char messageBuffer[32];
+            snprintf(messageBuffer, sizeof(messageBuffer), "Pressure LPS IT: %lu hPa\r\n", result.value());
             uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
         }
         /*else
