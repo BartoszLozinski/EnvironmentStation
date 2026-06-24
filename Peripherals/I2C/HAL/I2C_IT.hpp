@@ -43,7 +43,6 @@ namespace Peripherals
             }
             void OnRxComplete() override;
             void NotifyDataIsRead() override;
-            std::optional<std::span<uint8_t>> GetResult() override;
             Peripherals::I2CState GetState() const override { return state; }
 
         };

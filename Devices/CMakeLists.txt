@@ -1,9 +1,11 @@
 set(target_name Devices)
 
-set(${target_name}_src  LPS25HB.cpp
+set(${target_name}_src  LPS25HBBase.cpp
+                        LPS25HB.cpp
                         LPS25HB_Async.cpp)
 
-set(${target_name}_hpp  LPS25HB.hpp
+set(${target_name}_hpp  LPS25HBBase.hpp
+                        LPS25HB.hpp
                         LPS25HB_Async.hpp
                         Measurement.hpp)
 

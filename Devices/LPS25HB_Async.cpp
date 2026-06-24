@@ -6,17 +6,6 @@ namespace Device
         : i2c(i2c_) {}
 
     // TODO: make common base class for LPS25HB,
-    float LPS25HB_Async::RecalculateRawTemperature(const int16_t rawTemp) const
-    {
-        // Formula provided by the datasheet
-        return rawTemp / 480.0f + 42.5f; // *C
-    }
-
-    int32_t LPS25HB_Async::RecalculateRawPressure(const int32_t rawPressure) const
-    {
-        // Formula provided by the datasheet
-        return rawPressure / 4096; // hPa
-    }
 
     std::optional<uint8_t> LPS25HB_Async::ReadRegister(const uint8_t reg)
     {
@@ -48,14 +37,13 @@ namespace Device
 
     std::optional<float> LPS25HB_Async::ReadTemperature()
     {
-        static constexpr uint8_t AUTO_INCREMENT = 0x80; //TEMP_OUT_L and TEMP_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
         if (state == State::Idle)
         {
             state = i2c.Read(Registers::ADDR
                             , Registers::TEMP_OUT_L | AUTO_INCREMENT
                             , std::span<uint8_t>(rawTempBuffer.data()
                                                 , rawTempBuffer.size())) == Peripherals::I2CResult::Success ? State::RxTempReading : State::Error;
-        }//TODO create own RxReadCompleted
+        }
         else if (state == State::RxTempReading && i2c.GetState() == Peripherals::I2CState::Done)
         {
             //is state::Done necessary?
@@ -71,14 +59,13 @@ namespace Device
     
     std::optional<int32_t> LPS25HB_Async::ReadPressure()
     {
-        static constexpr uint8_t AUTO_INCREMENT = 0x80; //PRESS_OUT_XL, PRESS_OUT_L, and PRESS_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
         if (state == State::Idle)
         {
             state = i2c.Read(Registers::ADDR
                             , Registers::PRESS_OUT_XL | AUTO_INCREMENT
                             , std::span<uint8_t>(rawPressureBuffer.data()
                                                 , rawPressureBuffer.size())) == Peripherals::I2CResult::Success ? State::RxPressureReading : State::Error;
-        }//TODO create own RxReadCompleted
+        }
         else if (state == State::RxPressureReading && i2c.GetState() == Peripherals::I2CState::Done)
         {
             //is state::Done necessary?

@@ -4,18 +4,6 @@ namespace Device
 {
     LPS25HB::LPS25HB(Peripherals::I2CBase& i2c_) : i2c(i2c_) {}
 
-    float LPS25HB::RecalculateRawTemperature(const int16_t rawTemp) const
-    {
-        // Formula provided by the datasheet
-        return rawTemp / 480.0f + 42.5f; // *C
-    }
-    
-    int32_t LPS25HB::RecalculateRawPressure(const int32_t rawPressure) const
-    {
-        // Formula provided by the datasheet
-        return rawPressure / 4096; // hPa
-    }
-
     // TODO WRITE UNIT TESTS!!!
 
     void LPS25HB::WriteRegister(const uint8_t reg, uint8_t value)
@@ -32,14 +20,13 @@ namespace Device
         return std::nullopt;
     };
 
-    std::optional<uint8_t> LPS25HB::ReadWhoAmI() const
+    std::optional<uint8_t> LPS25HB::ReadWhoAmI()
     {
         return ReadRegister(Registers::WHO_AM_I);
     }
 
-    std::optional<float> LPS25HB::ReadTemperature() const
+    std::optional<float> LPS25HB::ReadTemperature()
     {
-        static constexpr uint8_t AUTO_INCREMENT = 0x80; //TEMP_OUT_L and TEMP_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
         int16_t rawTemp = 0;
         if (i2c.Read(Registers::ADDR
                     , Registers::TEMP_OUT_L | AUTO_INCREMENT
@@ -52,9 +39,8 @@ namespace Device
         return std::nullopt;
     };
 
-    std::optional<int32_t> LPS25HB::ReadPressure() const
+    std::optional<int32_t> LPS25HB::ReadPressure() 
     {
-        static constexpr uint8_t AUTO_INCREMENT = 0x80; //PRESS_OUT_XL, PRESS_OUT_L, and PRESS_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
         int32_t rawPressure = 0;
         if (i2c.Read(Registers::ADDR
             , Registers::PRESS_OUT_XL | AUTO_INCREMENT

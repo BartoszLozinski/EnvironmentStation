@@ -34,7 +34,6 @@ namespace Peripherals
     public:
         virtual ~I2CBase_IT() = default;
         virtual void OnRxComplete() = 0;
-        virtual std::optional<std::span<uint8_t>> GetResult() = 0;//is it necessary?
         virtual void NotifyDataIsRead() = 0;
         virtual Peripherals::I2CState GetState() const = 0;
     };
