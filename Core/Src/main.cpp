@@ -77,6 +77,7 @@ int main()
     {
         static constexpr char successMsg[] = "LPS25HB Found!\r\n";
         uart2.Transmit(reinterpret_cast<const uint8_t*>(successMsg), strlen(successMsg));
+        //TO DO - change into state machine, instead of waking up  in blocking loop
         while(!lps25hbAsync.IsAwake())
             lps25hbAsync.WakeUp();
 
