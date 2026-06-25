@@ -14,6 +14,7 @@ namespace Peripherals
 {
     // TODO Make it clear
     // think about architecture refactor?
+    // probably doesnt need buffer, just force user to pass buffer
     namespace HAL
     {
         template<std::size_t BufferSize>
@@ -42,6 +43,7 @@ namespace Peripherals
                 return Read(deviceAddress, memoryAddress, std::span<uint8_t>(rXBuffer.data(), rXBuffer.size()));
             }
             void OnRxComplete() override;
+            void OnTxComplete() override;
             void NotifyDataIsRead() override;
             Peripherals::I2CState GetState() const override { return state; }
 

@@ -7,6 +7,14 @@ namespace Device
 
     // TODO: make common base class for LPS25HB,
 
+    bool LPS25HB_Async::DataReadyToRead() const
+    {
+        if (state == State::Done)
+            return true;
+
+        return false;
+    }
+
     std::optional<uint8_t> LPS25HB_Async::ReadRegister(const uint8_t reg)
     {
         if (state == State::Idle)
@@ -77,5 +85,38 @@ namespace Device
         }
 
         return std::nullopt;
+    }
+
+    void LPS25HB_Async::WakeUp()
+    {
+        //to debug
+        static uint8_t currentCtrlReg1 = 0;
+
+        if (state == State::Idle)
+        {
+            currentCtrlReg1 = 0;
+            state = i2c.Read(Registers::ADDR
+                            , Registers::CTRL_REG1
+                            , std::span<uint8_t>(&readRegisterBuffer, sizeof(readRegisterBuffer))) == Peripherals::I2CResult::Success ? State::TransferScheduled : State::Error;
+        }
+        else if (i2c.GetState() == Peripherals::I2CState::Done)
+        {
+            state = State::Done;
+            currentCtrlReg1 = readRegisterBuffer;
+            i2c.NotifyDataIsRead();
+        }
+        else if (state == State::Done)
+        {
+            state = State::WakeUpScheduled;
+            currentCtrlReg1 = static_cast<uint8_t>(currentCtrlReg1 | Registers::CTRL_REG1_PD);
+            i2c.Write(Registers::ADDR, Registers::CTRL_REG1, std::span<uint8_t>(&currentCtrlReg1, sizeof(currentCtrlReg1)));
+            
+        }
+        else if (state == State::WakeUpScheduled && i2c.GetState() == Peripherals::I2CState::Done)
+        {
+            state = State::Idle;
+            i2c.NotifyDataIsRead();
+            isAwake = true;
+        }
     }
 }

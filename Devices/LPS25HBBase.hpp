@@ -46,6 +46,7 @@ namespace Device
         [[nodiscard]] virtual std::optional<uint8_t> ReadWhoAmI() = 0;
         [[nodiscard]] virtual std::optional<float> ReadTemperature() = 0;
         [[nodiscard]] virtual std::optional<int32_t> ReadPressure() = 0;
+        virtual void WakeUp() = 0;
         //TODO: add WakeUp and SetMeasurementFrequency
     };
 };

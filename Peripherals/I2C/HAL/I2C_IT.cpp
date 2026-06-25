@@ -49,6 +49,13 @@ namespace Peripherals
         }
 
         template<std::size_t BufferSize>
+        void I2C_IT<BufferSize>::OnTxComplete()
+        {
+            if (state == I2CState::TxBusy)
+                state = I2CState::Done;
+        }
+
+        template<std::size_t BufferSize>
         void I2C_IT<BufferSize>::NotifyDataIsRead()
         {
             state = I2CState::Idle;

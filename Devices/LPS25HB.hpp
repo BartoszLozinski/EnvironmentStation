@@ -21,6 +21,6 @@ namespace Device
         [[nodiscard]] std::optional<float> ReadTemperature() override;
         [[nodiscard]] std::optional<int32_t> ReadPressure() override;
         void SetMeasurementFrequency(const MeasurementFrequency freq);
-        void WakeUp();
+        void WakeUp() override;
     };
 }

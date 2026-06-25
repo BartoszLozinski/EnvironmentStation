@@ -77,7 +77,9 @@ int main()
     {
         static constexpr char successMsg[] = "LPS25HB Found!\r\n";
         uart2.Transmit(reinterpret_cast<const uint8_t*>(successMsg), strlen(successMsg));
-        lps25hb.WakeUp();
+        while(!lps25hbAsync.IsAwake())
+            lps25hbAsync.WakeUp();
+
         lps25hb.SetMeasurementFrequency(Device::LPS25HB::MeasurementFrequency::Hz25);
         HAL_Delay(100); //TODO - get rid to blocking delay
     }
@@ -399,7 +401,39 @@ extern "C" void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
     if (hi2c->Instance == I2C1)
     {
         if (g_i2c1IT)
+        {
             g_i2c1IT->OnRxComplete();
+        }
+    }
+}
+
+extern "C" void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    if (hi2c->Instance == I2C1)
+    {
+        if (g_i2c1IT)
+        {
+            g_i2c1IT->OnTxComplete();
+        }
+    }
+}
+
+extern "C" void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    if (hi2c->Instance == I2C1)
+    {
+        if (g_i2c1IT)
+        {
+            g_i2c1IT->OnTxComplete();
+        }
+    }
+}
+
+extern "C" void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
+{
+    if (hi2c->Instance == I2C1)
+    {
+        // Optionally inspect hi2c->ErrorCode here for future debug.
     }
 }
 

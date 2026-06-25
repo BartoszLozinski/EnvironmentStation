@@ -34,6 +34,7 @@ namespace Peripherals
     public:
         virtual ~I2CBase_IT() = default;
         virtual void OnRxComplete() = 0;
+        virtual void OnTxComplete() = 0;
         virtual void NotifyDataIsRead() = 0;
         virtual Peripherals::I2CState GetState() const = 0;
     };
