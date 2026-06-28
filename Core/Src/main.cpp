@@ -31,6 +31,7 @@ static void MX_I2C1_Init(void);
 
 Peripherals::HAL::UartIT uart2{ huart2 };
 Peripherals::HAL::I2C_IT i2c1IT{ hi2c1 };
+Device::LPS25HB_Async lps25hbAsync{ i2c1IT };
 
 int main()
 {
@@ -58,7 +59,6 @@ int main()
     Peripherals::HAL::I2C i2c1{ hi2c1 };
     i2c1.SetTimeout(100);
     Device::LPS25HB lps25hb{ i2c1 };
-    Device::LPS25HB_Async lps25hbAsync{ i2c1IT };
 
     // LPS25HB test
 
@@ -321,7 +321,7 @@ extern "C" void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1)
     {
-        i2c1IT.OnRxComplete();
+        lps25hbAsync.OnRxComplete();
     }
 }
 
@@ -329,7 +329,7 @@ extern "C" void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1)
     {
-        i2c1IT.OnTxComplete();
+        lps25hbAsync.OnTxComplete();
     }
 }
 
@@ -337,7 +337,7 @@ extern "C" void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1)
     {
-        i2c1IT.OnTxComplete();
+        lps25hbAsync.OnTxComplete();
     }
 }
 

@@ -15,7 +15,8 @@ namespace Device
             WakeUpScheduled,
             RxTempReading,
             RxPressureReading,
-            Done,
+            DataReady,
+            TxDone,
             Error,
         };
         
@@ -34,9 +35,11 @@ namespace Device
         [[nodiscard]] std::optional<uint8_t> ReadWhoAmI() override;
         [[nodiscard]] std::optional<float> ReadTemperature() override;
         [[nodiscard]] std::optional<int32_t> ReadPressure() override;
-        [[nodiscard]] bool DataReadyToRead() const;
         void SetMeasurementFrequency(const MeasurementFrequency freq);
         [[nodiscard]] bool IsAwake() const { return isAwake; }
         void WakeUp() override;
+
+        void OnRxComplete();
+        void OnTxComplete();
     };
 }

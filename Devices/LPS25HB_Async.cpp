@@ -7,12 +7,16 @@ namespace Device
 
     // TODO: make common base class for LPS25HB,
 
-    bool LPS25HB_Async::DataReadyToRead() const
+    void LPS25HB_Async::OnRxComplete()
     {
-        if (state == State::Done)
-            return true;
+        i2c.OnRxComplete();
+        state = State::DataReady;
+    }
 
-        return false;
+    void LPS25HB_Async::OnTxComplete()
+    {
+        i2c.OnTxComplete();
+        state = State::TxDone;
     }
 
     std::optional<uint8_t> LPS25HB_Async::ReadRegister(const uint8_t reg)
@@ -23,9 +27,9 @@ namespace Device
                             , reg
                             , std::span<uint8_t>(&readRegisterBuffer, sizeof(readRegisterBuffer))) == Peripherals::I2CResult::Success ? State::TransferScheduled : State::Error;
         }
-        else if (i2c.GetState() == Peripherals::I2CState::Done)
+        else if (state == State::DataReady)
         {
-            state = State::Done;
+            //i2c.NotifyDataIsRead();
             return readRegisterBuffer;
         }
 
@@ -35,9 +39,11 @@ namespace Device
     std::optional<uint8_t> LPS25HB_Async::ReadWhoAmI()
     {
         const auto result = ReadRegister(Registers::WHO_AM_I);
-        if (result && state == State::Done)
+        if (result && state == State::DataReady)
+        {
             state = State::Idle;
-
+        }
+        
         return result;
     }
 
@@ -52,7 +58,7 @@ namespace Device
                             , std::span<uint8_t>(rawTempBuffer.data()
                                                 , rawTempBuffer.size())) == Peripherals::I2CResult::Success ? State::RxTempReading : State::Error;
         }
-        else if (state == State::RxTempReading && i2c.GetState() == Peripherals::I2CState::Done)
+        else if (state == State::DataReady)
         {
             //is state::Done necessary?
             i2c.NotifyDataIsRead();
@@ -74,7 +80,7 @@ namespace Device
                             , std::span<uint8_t>(rawPressureBuffer.data()
                                                 , rawPressureBuffer.size())) == Peripherals::I2CResult::Success ? State::RxPressureReading : State::Error;
         }
-        else if (state == State::RxPressureReading && i2c.GetState() == Peripherals::I2CState::Done)
+        else if (state == State::DataReady)
         {
             //is state::Done necessary?
             i2c.NotifyDataIsRead();
@@ -89,7 +95,6 @@ namespace Device
 
     void LPS25HB_Async::WakeUp()
     {
-        //to debug
         static uint8_t currentCtrlReg1 = 0;
 
         if (state == State::Idle)
@@ -99,20 +104,16 @@ namespace Device
                             , Registers::CTRL_REG1
                             , std::span<uint8_t>(&readRegisterBuffer, sizeof(readRegisterBuffer))) == Peripherals::I2CResult::Success ? State::TransferScheduled : State::Error;
         }
-        else if (i2c.GetState() == Peripherals::I2CState::Done)
+        else if (state == State::DataReady)
         {
-            state = State::Done;
             currentCtrlReg1 = readRegisterBuffer;
             i2c.NotifyDataIsRead();
-        }
-        else if (state == State::Done)
-        {
             state = State::WakeUpScheduled;
             currentCtrlReg1 = static_cast<uint8_t>(currentCtrlReg1 | Registers::CTRL_REG1_PD);
             i2c.Write(Registers::ADDR, Registers::CTRL_REG1, std::span<uint8_t>(&currentCtrlReg1, sizeof(currentCtrlReg1)));
             
         }
-        else if (state == State::WakeUpScheduled && i2c.GetState() == Peripherals::I2CState::Done)
+        else if (state == State::TxDone)
         {
             state = State::Idle;
             i2c.NotifyDataIsRead();
