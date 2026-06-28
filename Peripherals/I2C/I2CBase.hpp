@@ -36,6 +36,6 @@ namespace Peripherals
         virtual void OnRxComplete() = 0;
         virtual void OnTxComplete() = 0;
         virtual void NotifyDataIsRead() = 0;
-        virtual Peripherals::I2CState GetState() const = 0;
+        [[nodiscard]] virtual Peripherals::I2CState GetState() const = 0;
     };
 }

@@ -17,12 +17,10 @@ namespace Peripherals
     // probably doesnt need buffer, just force user to pass buffer
     namespace HAL
     {
-        template<std::size_t BufferSize>
         class I2C_IT : public I2CBase_IT
         {
         private:
             I2C_HandleTypeDef& i2cHandle;
-            std::array<uint8_t, BufferSize> rXBuffer{};
             volatile I2CState state{  I2CState::Idle };
 
         public:
@@ -37,11 +35,6 @@ namespace Peripherals
             [[nodiscard]] I2CResult Write(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) override;
             [[nodiscard]] I2CResult Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer) override;
 
-            // convenience overload that uses the internal buffer
-            [[nodiscard]] I2CResult Read(const uint16_t deviceAddress, const uint16_t memoryAddress)
-            {
-                return Read(deviceAddress, memoryAddress, std::span<uint8_t>(rXBuffer.data(), rXBuffer.size()));
-            }
             void OnRxComplete() override;
             void OnTxComplete() override;
             void NotifyDataIsRead() override;

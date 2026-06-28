@@ -4,11 +4,9 @@ namespace Peripherals
 {
     namespace HAL
     {
-        template<std::size_t BufferSize>
-        I2C_IT<BufferSize>::I2C_IT(I2C_HandleTypeDef& i2cHandle_) : i2cHandle(i2cHandle_) {}
+        I2C_IT::I2C_IT(I2C_HandleTypeDef& i2cHandle_) : i2cHandle(i2cHandle_) {}
 
-        template<std::size_t BufferSize>
-        I2CResult I2C_IT<BufferSize>::Write(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
+        I2CResult I2C_IT::Write(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
         {
             if (state != I2CState::Idle)
                 return I2CResult::Busy;
@@ -24,8 +22,7 @@ namespace Peripherals
             return success ? I2CResult::Success : I2CResult::Error;
         }
 
-        template<std::size_t BufferSize>
-        I2CResult I2C_IT<BufferSize>::Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
+        I2CResult I2C_IT::Read(const uint16_t deviceAddress, const uint16_t memoryAddress, std::span<uint8_t> buffer)
         {
             if (state != I2CState::Idle)
                 return I2CResult::Busy;
@@ -41,26 +38,22 @@ namespace Peripherals
             return success ? I2CResult::Success : I2CResult::Error;
         }
 
-        template<std::size_t BufferSize>
-        void I2C_IT<BufferSize>::OnRxComplete()
+        void I2C_IT::OnRxComplete()
         {
             if (state == I2CState::RxBusy)
                 state = I2CState::Done;
         }
 
-        template<std::size_t BufferSize>
-        void I2C_IT<BufferSize>::OnTxComplete()
+        void I2C_IT::OnTxComplete()
         {
             if (state == I2CState::TxBusy)
                 state = I2CState::Done;
         }
 
-        template<std::size_t BufferSize>
-        void I2C_IT<BufferSize>::NotifyDataIsRead()
+        void I2C_IT::NotifyDataIsRead()
         {
             state = I2CState::Idle;
         }
 
-        template class I2C_IT<4>;
     }
 }

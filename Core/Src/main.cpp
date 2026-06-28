@@ -30,8 +30,7 @@ static void MX_I2C1_Init(void);
 //END - CUBE GENERATED
 
 Peripherals::HAL::UartIT uart2{ huart2 };
-// Global pointer used by the C HAL callback to forward interrupts to the C++ instance.
-static Peripherals::HAL::I2C_IT<4>* g_i2c1IT = nullptr;
+Peripherals::HAL::I2C_IT i2c1IT{ hi2c1 };
 
 int main()
 {
@@ -52,19 +51,14 @@ int main()
     HAL::SoftwareTimer uart2PollTimer{ 1 };
     HAL::SoftwareTimer btUartResetTimer{ 2000 };
     HAL::SoftwareTimer btUartPollTimer{ 1 };
-    //HAL::SoftwareTimer lps25hbPollTimer{ 500 };
     HAL::SoftwareTimer temperatureReadingTimer{ 500 };
     HAL::SoftwareTimer pressureReadingTimer{ 500 };
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
     Peripherals::HAL::I2C i2c1{ hi2c1 };
     i2c1.SetTimeout(100);
-    // I2C interrupt-driven wrapper instance - construct after HAL init
-    Peripherals::HAL::I2C_IT<4> i2c1IT{ hi2c1 };
     Device::LPS25HB lps25hb{ i2c1 };
     Device::LPS25HB_Async lps25hbAsync{ i2c1IT };
-
-    g_i2c1IT = &i2c1IT;
 
     // LPS25HB test
 
@@ -92,7 +86,6 @@ int main()
         return 1;
     }
 
-    //bool transferScheduled = false;
 
     while (true)
     {
@@ -134,73 +127,6 @@ int main()
 
         // End of UART Test
 
-        // TEST of LPS25HB
-
-        /*
-        if (lps25hbPollTimer.IsExpired())
-        {
-            lps25hbPollTimer.Reset();
-
-            if (const auto temp = lps25hb.ReadTemperature(); temp.has_value())
-            {
-                char messageBuffer[32];
-                snprintf(messageBuffer, sizeof(messageBuffer), "Temp LPS Class: %.2f C\r\n", temp.value());
-                uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
-            }
-            else
-            {
-                char errorBuffer[32];
-                snprintf(errorBuffer, sizeof(errorBuffer), "Temp read error\r\n");
-                uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
-            }
-
-            if (const auto pressure = lps25hb.ReadPressure(); pressure.has_value())
-            {
-                char messageBuffer[32];
-                snprintf(messageBuffer, sizeof(messageBuffer), "Pressure LPS Class: %li hPa\r\n", pressure.value());
-                uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
-            }
-            else
-            {
-                char errorBuffer[32];
-                snprintf(errorBuffer, sizeof(errorBuffer), "Pressure read error\r\n");
-                uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
-            }
-        }*/
-
-        //Interrupts tests for temperature
-        /*
-        static constexpr uint16_t ADDR = 0xBA;
-        static constexpr uint16_t TEMP_OUT_L = 0x2B;
-        static constexpr uint8_t AUTO_INCREMENT = 0x80; //TEMP_OUT_L and TEMP_OUT_H are in sequence, so we can read them in one go by setting the auto-increment bit
-
-        if (!transferScheduled && lps25hbPollTimer.IsExpired())
-        {
-            transferScheduled = i2c1IT.Read(ADDR, TEMP_OUT_L | AUTO_INCREMENT) == Peripherals::I2CResult::Success;
-        }
-
-        if ((i2c1IT.GetState() == Peripherals::I2CState::Done || i2c1IT.GetState() == Peripherals::I2CState::Error) && lps25hbPollTimer.IsExpired())
-        {
-            transferScheduled = false;
-            const auto bufferOpt = i2c1IT.GetResult();
-            if (bufferOpt.has_value())
-            {
-                lps25hbPollTimer.Reset();
-                const auto buffer = *bufferOpt;
-                int16_t tempRaw = (static_cast<int16_t>(buffer[1]) << 8) | buffer[0];
-                float tempC = tempRaw / 480.0f + 42.5f; // according to datasheet
-                char messageBuffer[32];
-                snprintf(messageBuffer, sizeof(messageBuffer), "Temp LPS IT: %.2f C\r\n", tempC);
-                uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
-            }
-            else
-            {
-                char errorBuffer[32];
-                snprintf(errorBuffer, sizeof(errorBuffer), "Temp read error\r\n");
-                uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
-            }
-        }
-        */
         if (const auto result = lps25hbAsync.ReadTemperature(); result && temperatureReadingTimer.IsExpired())
         {
             temperatureReadingTimer.Reset();
@@ -216,12 +142,6 @@ int main()
             snprintf(messageBuffer, sizeof(messageBuffer), "Pressure LPS IT: %lu hPa\r\n", result.value());
             uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
         }
-        /*else
-        {
-            char errorBuffer[32];
-            snprintf(errorBuffer, sizeof(errorBuffer), "Temp read error\r\n");
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(errorBuffer), strlen(errorBuffer));
-        }*/
     }
 }
 
@@ -401,10 +321,7 @@ extern "C" void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1)
     {
-        if (g_i2c1IT)
-        {
-            g_i2c1IT->OnRxComplete();
-        }
+        i2c1IT.OnRxComplete();
     }
 }
 
@@ -412,10 +329,7 @@ extern "C" void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1)
     {
-        if (g_i2c1IT)
-        {
-            g_i2c1IT->OnTxComplete();
-        }
+        i2c1IT.OnTxComplete();
     }
 }
 
@@ -423,10 +337,7 @@ extern "C" void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1)
     {
-        if (g_i2c1IT)
-        {
-            g_i2c1IT->OnTxComplete();
-        }
+        i2c1IT.OnTxComplete();
     }
 }
 
