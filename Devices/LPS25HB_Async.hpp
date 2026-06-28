@@ -15,8 +15,10 @@ namespace Device
             WakeUpScheduled,
             RxTempReading,
             RxPressureReading,
-            DataReady,
-            TxDone,
+            TempReadyToRead,
+            PressureReadyToRead,
+            RegisterReadyToRead,
+            WakeUpCompleted,
             Error,
         };
         
