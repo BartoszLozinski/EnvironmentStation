@@ -5,17 +5,22 @@ namespace Device
     LPS25HB_Async::LPS25HB_Async(Peripherals::I2CBase_IT& i2c_)
         : i2c(i2c_) {}
 
-    // TODO: make common base class for LPS25HB,
-
     void LPS25HB_Async::OnRxComplete()
     {
         i2c.OnRxComplete();
-        if (state == State::RxPressureReading)
-            state = State::PressureReadyToRead;
-        else if (state == State::RxTempReading)
-            state = State::TempReadyToRead;
-        else
-            state = State::RegisterReadyToRead;
+
+        using enum State;
+        switch(state)
+        {
+        case RxPressureReading:
+            state = PressureReadyToRead;
+            break;
+        case RxTempReading:
+            state = TempReadyToRead;
+            break;
+        default:
+            state = RegisterReadyToRead;
+        }
     }
 
     void LPS25HB_Async::OnTxComplete()
@@ -35,7 +40,7 @@ namespace Device
         }
         else if (state == State::RegisterReadyToRead)
         {
-            //i2c.NotifyDataIsRead();
+            i2c.NotifyDataIsRead();
             return readRegisterBuffer;
         }
 
@@ -53,8 +58,6 @@ namespace Device
         return result;
     }
 
-    // TO DO: Check if code can be cleaner, remove unnecessary overloads
-
     std::optional<float> LPS25HB_Async::ReadTemperature()
     {
         if (state == State::Idle)
@@ -66,9 +69,7 @@ namespace Device
         }
         else if (state == State::TempReadyToRead)
         {
-            //is state::Done necessary?
             i2c.NotifyDataIsRead();
-            //state = State::Done;
             const int16_t tempBuffer = (static_cast<int16_t>(rawTempBuffer[1]) << 8) | rawTempBuffer[0];
             state = State::Idle;
             return RecalculateRawTemperature(tempBuffer);
@@ -88,9 +89,7 @@ namespace Device
         }
         else if (state == State::PressureReadyToRead)
         {
-            //is state::Done necessary?
             i2c.NotifyDataIsRead();
-            //state = State::Done;
             const uint32_t pressureBuffer = (static_cast<int16_t>(rawPressureBuffer[2]) << 16) | rawPressureBuffer[1] << 8 | rawPressureBuffer[0];
             state = State::Idle;
             return RecalculateRawPressure(pressureBuffer);
