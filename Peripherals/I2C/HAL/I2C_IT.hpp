@@ -12,9 +12,6 @@ extern "C"
 
 namespace Peripherals
 {
-    // TODO Make it clear
-    // think about architecture refactor?
-    // probably doesnt need buffer, just force user to pass buffer
     namespace HAL
     {
         class I2C_IT : public I2CBase_IT
