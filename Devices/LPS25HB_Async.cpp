@@ -58,20 +58,27 @@ namespace Device
         return result;
     }
 
+    [[nodiscard]] uint32_t LPS25HB_Async::ParsePressureBuffer() const
+    {
+        return (static_cast<uint32_t>(rawPressureBuffer[2]) << 16) | 
+                static_cast<uint32_t>(rawPressureBuffer[1] << 8) |
+                static_cast<uint32_t>(rawPressureBuffer[0]);
+    }
+
+    [[nodiscard]] int16_t LPS25HB_Async::ParseTemperatureBuffer() const
+    {
+        return (static_cast<int16_t>(rawTempBuffer[1]) << 8) | static_cast<int16_t>(rawTempBuffer[0]);
+    }
+
     std::optional<float> LPS25HB_Async::ReadTemperature()
     {
         if (state == State::Idle)
         {
-            state = i2c.Read(Registers::ADDR
-                            , Registers::TEMP_OUT_L | AUTO_INCREMENT
-                            , std::span<uint8_t>(rawTempBuffer.data()
-                                                , rawTempBuffer.size())) == Peripherals::I2CResult::Success ? State::RxTempReading : State::Error;
+            StartRead(Registers::TEMP_OUT_L, rawTempBuffer, State::RxTempReading);
         }
         else if (state == State::TempReadyToRead)
         {
-            i2c.NotifyDataIsRead();
-            const int16_t tempBuffer = (static_cast<int16_t>(rawTempBuffer[1]) << 8) | rawTempBuffer[0];
-            state = State::Idle;
+            const int16_t tempBuffer = CompleteAsyncRead(&LPS25HB_Async::ParseTemperatureBuffer, State::Idle);
             return RecalculateRawTemperature(tempBuffer);
         }
 
@@ -82,40 +89,38 @@ namespace Device
     {
         if (state == State::Idle)
         {
-            state = i2c.Read(Registers::ADDR
-                            , Registers::PRESS_OUT_XL | AUTO_INCREMENT
-                            , std::span<uint8_t>(rawPressureBuffer.data()
-                                                , rawPressureBuffer.size())) == Peripherals::I2CResult::Success ? State::RxPressureReading : State::Error;
+            StartRead(Registers::PRESS_OUT_XL, rawPressureBuffer, State::RxPressureReading);
         }
         else if (state == State::PressureReadyToRead)
         {
-            i2c.NotifyDataIsRead();
-            const uint32_t pressureBuffer = (static_cast<int16_t>(rawPressureBuffer[2]) << 16) | rawPressureBuffer[1] << 8 | rawPressureBuffer[0];
-            state = State::Idle;
+            const uint32_t pressureBuffer = CompleteAsyncRead(&LPS25HB_Async::ParsePressureBuffer, State::Idle);
             return RecalculateRawPressure(pressureBuffer);
         }
 
         return std::nullopt;
     }
 
+    void LPS25HB_Async::StartRead(const int16_t reg, std::span<uint8_t>(buffer), const State successfulState)
+    {
+        state = i2c.Read(Registers::ADDR
+                        , reg | AUTO_INCREMENT
+                        , buffer) == Peripherals::I2CResult::Success ? successfulState : State::Error;
+    }
+
     void LPS25HB_Async::WakeUp()
     {
-        static uint8_t currentCtrlReg1 = 0;
-
         if (state == State::Idle)
         {
-            currentCtrlReg1 = 0;
-            state = i2c.Read(Registers::ADDR
-                            , Registers::CTRL_REG1
-                            , std::span<uint8_t>(&readRegisterBuffer, sizeof(readRegisterBuffer))) == Peripherals::I2CResult::Success ? State::TransferScheduled : State::Error;
+            wakeUpCurrentCtrlReg1 = 0;
+            StartRead(Registers::CTRL_REG1, std::span<uint8_t>(&readRegisterBuffer, sizeof(readRegisterBuffer)), State::TransferScheduled);
         }
         else if (state == State::RegisterReadyToRead)
         {
-            currentCtrlReg1 = readRegisterBuffer;
+            wakeUpCurrentCtrlReg1 = readRegisterBuffer;            
             i2c.NotifyDataIsRead();
             state = State::WakeUpScheduled;
-            currentCtrlReg1 = static_cast<uint8_t>(currentCtrlReg1 | Registers::CTRL_REG1_PD);
-            i2c.Write(Registers::ADDR, Registers::CTRL_REG1, std::span<uint8_t>(&currentCtrlReg1, sizeof(currentCtrlReg1)));
+            wakeUpCurrentCtrlReg1 = static_cast<uint8_t>(wakeUpCurrentCtrlReg1 | Registers::CTRL_REG1_PD);
+            i2c.Write(Registers::ADDR, Registers::CTRL_REG1, std::span<uint8_t>(&wakeUpCurrentCtrlReg1, sizeof(wakeUpCurrentCtrlReg1)));
             
         }
         else if (state == State::WakeUpCompleted)
