@@ -8,7 +8,7 @@
 #include "../../Peripherals/Timer/HAL/SoftwareTimer.hpp"
 #include "../../Peripherals/I2C/HAL/I2C.hpp"
 #include "../../Peripherals/I2C/HAL/I2C_IT.hpp"
-#include "../../Peripherals/UART/HAL/Uart.hpp"
+//#include "../../Peripherals/UART/HAL/Uart.hpp"
 #include "../../Peripherals/UART/HAL/UartIT.hpp"
 #include "../../Peripherals/UART/LineParser.hpp"
 
@@ -18,6 +18,7 @@
 I2C_HandleTypeDef hi2c1;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
+
 
 // CUBE GENERAATED
 /* Private function prototypes -----------------------------------------------*/
@@ -29,6 +30,7 @@ static void MX_I2C1_Init(void);
 
 //END - CUBE GENERATED
 
+Peripherals::HAL::UartIT btHC06Uart{ huart1 }; //PA9 (TX), PA10 (RX)
 Peripherals::HAL::UartIT uart2{ huart2 };
 Peripherals::HAL::I2C_IT i2c1IT{ hi2c1 };
 Device::LPS25HB_Async lps25hbAsync{ i2c1IT };
@@ -45,9 +47,9 @@ int main()
     MX_USART1_UART_Init();
     MX_I2C1_Init();
     
+    btHC06Uart.StartReceiveIT();
     uart2.StartReceiveIT();
 
-    Peripherals::HAL::Uart btHC06Uart{ huart1 }; //PA9 (TX), PA10 (RX)
     HAL::SoftwareTimer uartResetTimer{ 2000 };
     HAL::SoftwareTimer uart2PollTimer{ 1 };
     HAL::SoftwareTimer btUartResetTimer{ 2000 };
@@ -94,12 +96,6 @@ int main()
         // sudo rfcomm connect 0 <Address>
         // on second terminal window: screen /dev/rfcomm0 9600
         
-        if (btUartPollTimer.IsExpired())
-        {
-            btUartPollTimer.Reset();
-            btHC06Uart.Poll();
-        }
-
         if (const auto lineOpt = btLineParser.ReadLine())
         {
             const auto line = *lineOpt;
@@ -311,6 +307,11 @@ void Error_Handler(void)
 
 extern "C" void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+    if (huart->Instance == USART1)
+    {
+        btHC06Uart.RxCpltCallback();
+    }
+
     if (huart->Instance == USART2)
     {
         uart2.RxCpltCallback();
