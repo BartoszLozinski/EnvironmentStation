@@ -4,6 +4,7 @@ set(LD_SCRIPT ${CMAKE_SOURCE_DIR}/STM32L476RGTX_FLASH.ld)
 add_executable(${CMAKE_PROJECT_NAME})
 target_sources(${CMAKE_PROJECT_NAME}
     PRIVATE
+        Src/stm32CubeMXGenerated.c
         Src/main.cpp
         Src/stm32l4xx_hal_msp.c
         Src/stm32l4xx_it.c
