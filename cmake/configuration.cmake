@@ -20,7 +20,7 @@ function(configure_embedded_target target)
     )
 
     target_compile_definitions(${target}
-        PUBLIC 
+        PRIVATE 
             STM32L476xx
     )
 

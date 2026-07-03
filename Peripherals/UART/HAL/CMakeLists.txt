@@ -7,6 +7,7 @@ set(${target_name}_hpp  ../IUart.hpp
                         UartIT.hpp
 )
 
+#HEADER ONLY
 add_library(${target_name} INTERFACE)
 
 cmake_path(GET  CMAKE_CURRENT_SOURCE_DIR    PARENT_PATH     PERIHPERALS_DIR)

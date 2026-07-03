@@ -10,10 +10,6 @@ target_sources(${target_name}
     PRIVATE
         ${HAL_SOURCES})
 
-if(NOT COMMAND configure_embedded_target)
-    include("${CMAKE_CURRENT_LIST_DIR}/../cmake/configuration.cmake")
-endif()
-
 configure_embedded_target(${target_name})
 
 target_include_directories(${target_name}
