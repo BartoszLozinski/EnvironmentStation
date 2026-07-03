@@ -39,7 +39,7 @@ target_compile_options(${CMAKE_PROJECT_NAME}
         -Wextra
         -Wpedantic
         -fverbose-asm # additional comments for generated assembler code
-        -MMD # create dependency file
+
         
         $<$<COMPILE_LANGUAGE:C>:-Wstrict-prototypes>
 

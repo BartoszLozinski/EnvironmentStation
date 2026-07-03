@@ -29,7 +29,6 @@ target_compile_options(${target_name}   PRIVATE     -Wall
                                                     -Wextra
                                                     -Wpedantic
                                                     -fverbose-asm # additional comments for generated assembler code
-                                                    -MMD # create dependency file
 
                                                     $<$<COMPILE_LANGUAGE:C>:-Wstrict-prototypes>
 

@@ -18,7 +18,6 @@ target_compile_options(${target_name}
         -ffunction-sections
         -fdata-sections
         -fverbose-asm # additional comments for generated assembler code
-        -MMD # create dependecy files
         $<$<CONFIG:DEBUG>: -Og -g>
         $<$<CONFIG:RELEASE>: -O3>
 )

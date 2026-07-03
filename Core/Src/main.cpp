@@ -8,7 +8,6 @@
 #include "../../Peripherals/Timer/HAL/SoftwareTimer.hpp"
 #include "../../Peripherals/I2C/HAL/I2C.hpp"
 #include "../../Peripherals/I2C/HAL/I2C_IT.hpp"
-//#include "../../Peripherals/UART/HAL/Uart.hpp"
 #include "../../Peripherals/UART/HAL/UartIT.hpp"
 #include "../../Peripherals/UART/LineParser.hpp"
 
