@@ -13,6 +13,12 @@ add_library(${target_name}  STATIC)
 
 cmake_path(GET  CMAKE_CURRENT_SOURCE_DIR    PARENT_PATH     DEVICES_DIR)
 
+if(NOT COMMAND configure_embedded_target)
+    include("${CMAKE_CURRENT_LIST_DIR}/../cmake/configuration.cmake")
+endif()
+
+configure_embedded_target(${target_name})
+
 target_sources(${target_name}
     PRIVATE
         ${${target_name}_src}
@@ -22,18 +28,3 @@ target_sources(${target_name}
         FILES   ${${target_name}_hpp}
 )
 
-target_compile_options(${target_name}   PRIVATE     -Wall
-                                                    -Werror
-                                                    -Wextra
-                                                    -Wpedantic
-                                                    -fverbose-asm # additional comments for generated assembler code
-                                                    $<$<COMPILE_LANGUAGE:C>:-Wstrict-prototypes>
-
-                                                    $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti> # disable virtual class information used by dynamic_cast and typeid
-                                                    $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions> # disable exceptions handling
-
-                                                    $<$<CONFIG:DEBUG>: -Og -g>
-                                                    $<$<CONFIG:RELEASE>: -O3>
-)
-
-set_target_properties(${target_name}   PROPERTIES  CXX_STANDARD 20     CXX_STANDARD_REQUIRED ON)

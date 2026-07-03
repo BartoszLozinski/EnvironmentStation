@@ -26,36 +26,11 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         Devices
 )
 
+configure_embedded_target(${CMAKE_PROJECT_NAME})
+
 target_compile_definitions(${CMAKE_PROJECT_NAME}
     PUBLIC 
-        STM32L476xx
         USE_HAL_DRIVER
-)
-
-target_compile_options(${CMAKE_PROJECT_NAME}
-    PRIVATE
-        -Wall
-        -Werror
-        -Wextra
-        -Wpedantic
-        -fverbose-asm # additional comments for generated assembler code
-
-        
-        $<$<COMPILE_LANGUAGE:C>:-Wstrict-prototypes>
-
-        $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti> # disable virtual class information used by dynamic_cast and typeid
-        $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions> # disable exceptions handling
-        
-        $<$<CONFIG:DEBUG>: -Og -g>
-        $<$<CONFIG:RELEASE>: -O3>
-)
-
-set_target_properties(${CMAKE_PROJECT_NAME}
-    PROPERTIES
-        C_STANDARD 11
-        C_STANDARD_REQUIRED ON
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED ON
 )
 
 target_link_options(${CMAKE_PROJECT_NAME}           PRIVATE

@@ -10,17 +10,11 @@ target_sources(${target_name}
     PRIVATE
         ${HAL_SOURCES})
 
-target_compile_options(${target_name}
-    PRIVATE
-        -Wall
-        -Wextra
-        -Wstrict-prototypes
-        -ffunction-sections
-        -fdata-sections
-        -fverbose-asm # additional comments for generated assembler code
-        $<$<CONFIG:DEBUG>: -Og -g>
-        $<$<CONFIG:RELEASE>: -O3>
-)
+if(NOT COMMAND configure_embedded_target)
+    include("${CMAKE_CURRENT_LIST_DIR}/../cmake/configuration.cmake")
+endif()
+
+configure_embedded_target(${target_name})
 
 target_include_directories(${target_name}
     PRIVATE
@@ -32,16 +26,7 @@ target_include_directories(${target_name}
         STM32L4xx_HAL_Driver/Inc
 )
 
-set_target_properties(${target_name}
-    PROPERTIES
-        C_STANDARD 11
-        C_STANDARD_REQUIRED ON
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED ON
-)
-
 target_compile_definitions(${target_name}
     PRIVATE
-        STM32L476xx
         USE_HAL_DRIVER
 )

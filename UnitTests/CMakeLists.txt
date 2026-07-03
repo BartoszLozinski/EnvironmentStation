@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.28)
 project(UnitTests)
 
+include(${CMAKE_SOURCE_DIR}/../cmake/configuration.cmake)
+
 find_package(GTest REQUIRED)
 set(CMAKE_CXX_COMPILER  clang++-18)
 set(CMAKE_CXX_EXTENSIONS    OFF)
