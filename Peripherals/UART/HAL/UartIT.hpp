@@ -69,6 +69,7 @@ namespace Peripherals
                 StartReceiveIT();
             }
 
+            //TODO callback shoul set a state machine, and start transmit should be done by TransmitIT in the machine
             void TxCpltCallback()
             {
                 txBusy = false;
@@ -80,13 +81,7 @@ namespace Peripherals
                 return rxBuffer.Pop();
             }
 
-            //TODO:Interrupt transmit
             void Transmit(const uint8_t* data, size_t size) override
-            {
-                HAL_UART_Transmit(&huart, const_cast<uint8_t*>(data), size, HAL_MAX_DELAY);
-            }
-
-            void TransmitIT(const uint8_t* data, size_t size)
             {
                 for (size_t i = 0; i < size; ++i)
                 {

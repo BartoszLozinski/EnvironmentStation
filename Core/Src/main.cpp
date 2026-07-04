@@ -105,7 +105,7 @@ int main()
             uart2.Transmit(reinterpret_cast<const uint8_t*>(line.data()), line.size());
             uart2.Transmit(reinterpret_cast<const uint8_t*>("\r\n"), 2);
         }
-
+        
         // End of UART Test
 
         if (const auto result = lps25hbAsync.ReadTemperature(); result && temperatureReadingTimer.IsExpired())
@@ -149,6 +149,19 @@ extern "C" void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     if (huart->Instance == USART2)
     {
         uart2.RxCpltCallback();
+    }
+}
+
+extern "C" void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART1)
+    {
+        btHC06Uart.TxCpltCallback();
+    }
+
+    if (huart->Instance == USART2)
+    {
+        uart2.TxCpltCallback();
     }
 }
 
