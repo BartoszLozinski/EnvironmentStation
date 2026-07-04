@@ -4,10 +4,6 @@ project(EnvironmentStation C CXX ASM)
 include(${CMAKE_SOURCE_DIR}/cmake/configuration.cmake)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_C_EXTENSIONS OFF)
 
 add_compile_options(${CORE_FLAGS})
 add_link_options(${CORE_FLAGS})

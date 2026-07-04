@@ -37,6 +37,8 @@ function(configure_embedded_target target)
             C_STANDARD_REQUIRED ON
             CXX_STANDARD 20
             CXX_STANDARD_REQUIRED ON
+            CXX_EXTENSIONS OFF
+            C_EXTENSIONS OFF
     )
 
 
