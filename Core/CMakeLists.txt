@@ -14,7 +14,10 @@ target_sources(${CMAKE_PROJECT_NAME}
         Startup/startup_stm32l476rgtx.s
 )
 
-target_include_directories(${CMAKE_PROJECT_NAME}    PRIVATE     Core/Inc)
+target_include_directories(${CMAKE_PROJECT_NAME}
+    PRIVATE
+        Core/Inc)
+        
 target_link_libraries(${CMAKE_PROJECT_NAME}
     PRIVATE
         I2C_HAL
@@ -28,8 +31,9 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 configure_embedded_target(${CMAKE_PROJECT_NAME})
 configure_HAL_target(${CMAKE_PROJECT_NAME})
 
-target_link_options(${CMAKE_PROJECT_NAME}           PRIVATE
-    -T${LD_SCRIPT}
-    -Wl,-Map=${MAP_FILE},-cref
-    -Wl,--gc-sections
+target_link_options(${CMAKE_PROJECT_NAME}
+    PRIVATE
+        -T${LD_SCRIPT}
+        -Wl,-Map=${MAP_FILE},-cref
+        -Wl,--gc-sections
 )
