@@ -22,7 +22,10 @@ namespace Peripherals
             UART_HandleTypeDef& huart;
             std::size_t overflowCount{ 0 };
             UartRingBuffer<64> rxBuffer{};
+            UartRingBuffer<64> txBuffer{};
             uint8_t rxByte{};
+            uint8_t txByte{};
+            bool txBusy{ false };
 
         public:
             UartIT() = delete;
@@ -40,12 +43,36 @@ namespace Peripherals
                 HAL_UART_Receive_IT(&huart, &rxByte, 1);
             }
 
+            void StartTransmitIT()
+            {
+                if (txBusy || txBuffer.IsEmpty())
+                    return;
+
+                txBusy = true;
+                
+                if (const auto byte = txBuffer.Pop())
+                {
+                    txByte = byte.value();
+                    HAL_UART_Transmit_IT(&huart, &txByte, 1);
+                }
+                else
+                {
+                    txBusy = false;
+                }
+            }
+
             void RxCpltCallback()
             {
                 if (!rxBuffer.Push(rxByte))
                     ++overflowCount;
     
                 StartReceiveIT();
+            }
+
+            void TxCpltCallback()
+            {
+                txBusy = false;
+                StartTransmitIT();
             }
 
             [[nodiscard]] std::optional<uint8_t> Read() override
@@ -57,7 +84,22 @@ namespace Peripherals
             void Transmit(const uint8_t* data, size_t size) override
             {
                 HAL_UART_Transmit(&huart, const_cast<uint8_t*>(data), size, HAL_MAX_DELAY);
-            }           
+            }
+
+            void TransmitIT(const uint8_t* data, size_t size)
+            {
+                for (size_t i = 0; i < size; ++i)
+                {
+                    if (!txBuffer.Push(data[i]))
+                    {
+                        ++overflowCount; // or handle drop differently
+                        break;
+                    }
+                }
+
+                if (!txBusy)
+                    StartTransmitIT();
+            }
         };
     }
 }
