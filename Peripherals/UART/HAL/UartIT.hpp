@@ -8,6 +8,9 @@ extern "C"
 #include "stm32l4xx_hal.h"
 }
 
+template<std::size_t BufferSize>
+using UartRingBuffer = RingBuffer<uint8_t, BufferSize>;
+
 namespace Peripherals
 {
     namespace HAL
@@ -19,7 +22,7 @@ namespace Peripherals
         private:
             UART_HandleTypeDef& huart;
             std::size_t overflowCount{ 0 };
-            RingBuffer<uint8_t, BufferSize> rxBuffer{};
+            UartRingBuffer<64> rxBuffer{};
             uint8_t rxByte{};
 
             void Poll_Impl(){}
