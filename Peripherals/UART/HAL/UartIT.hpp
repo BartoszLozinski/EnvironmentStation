@@ -16,26 +16,13 @@ namespace Peripherals
     namespace HAL
     {
         template<std::size_t BufferSize = 64>
-        class UartIT : public IUart<UartIT<BufferSize>>
+        class UartIT : public IUart
         {
-        friend IUart<UartIT<BufferSize>>;
         private:
             UART_HandleTypeDef& huart;
             std::size_t overflowCount{ 0 };
             UartRingBuffer<64> rxBuffer{};
             uint8_t rxByte{};
-
-            void Poll_Impl(){}
-
-            std::optional<uint8_t> Read_Impl()
-            {
-                return rxBuffer.Pop();
-            }
-
-            void Transmit_Impl(const uint8_t* data, size_t size)
-            {
-                HAL_UART_Transmit(&huart, const_cast<uint8_t*>(data), size, HAL_MAX_DELAY);
-            }
 
         public:
             UartIT() = delete;
@@ -61,9 +48,16 @@ namespace Peripherals
                 StartReceiveIT();
             }
 
-            // TO DO:
-            // - Interrupt version
-            // - Line parser - done
+            [[nodiscard]] std::optional<uint8_t> Read() override
+            {
+                return rxBuffer.Pop();
+            }
+
+            //TODO:Interrupt transmit
+            void Transmit(const uint8_t* data, size_t size) override
+            {
+                HAL_UART_Transmit(&huart, const_cast<uint8_t*>(data), size, HAL_MAX_DELAY);
+            }           
         };
     }
 }

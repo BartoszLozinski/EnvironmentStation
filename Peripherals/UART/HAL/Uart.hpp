@@ -8,28 +8,20 @@ extern "C"
 #include "stm32l4xx_hal.h"
 }
 
+template<std::size_t BufferSize>
+using UartRingBuffer = RingBuffer<uint8_t, BufferSize>;
+
 namespace Peripherals
 {
     namespace HAL
     {
         template<std::size_t BufferSize = 64>
-        class Uart : public IUart<Uart<BufferSize>>
+        class Uart : public IUart
         {
-        friend IUart<Uart<BufferSize>>;
-        private:
+            private:
             UART_HandleTypeDef& huart;
             std::size_t overflowCount{ 0 };
-            RingBuffer<BufferSize> rxBuffer{};
-
-            std::optional<uint8_t> Read_Impl()
-            {
-                return rxBuffer.Pop();
-            }
-
-            void Transmit_Impl(const uint8_t* data, size_t size)
-            {
-                HAL_UART_Transmit(&huart, const_cast<uint8_t*>(data), size, HAL_MAX_DELAY);
-            }
+            UartRingBuffer<64> rxBuffer{};
 
         public:
             Uart() = delete;
@@ -52,6 +44,17 @@ namespace Peripherals
                         ++overflowCount;
                 }
             }
+
+            [[nodiscard]] std::optional<uint8_t> Read() override
+            {
+                return rxBuffer.Pop();
+            }
+
+            void Transmit(const uint8_t* data, size_t size) override
+            {
+                HAL_UART_Transmit(&huart, const_cast<uint8_t*>(data), size, HAL_MAX_DELAY);
+            }
+
         };
     }
 }

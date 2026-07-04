@@ -5,7 +5,6 @@
 
 namespace Peripherals
 {
-    template<typename Implementation>
     class IUart
     {
     public:
@@ -14,18 +13,10 @@ namespace Peripherals
         IUart(IUart&&) = delete;
         IUart& operator=(const IUart&) = delete;
         IUart& operator=(IUart&&) = delete;
-        ~IUart() = default;
+        virtual ~IUart() = default;
         
-        std::optional<uint8_t> Read()
-        {
-            return static_cast<Implementation*>(this)->Read_Impl();
-        }
+        [[nodiscard]] virtual std::optional<uint8_t> Read() = 0;
 
-        void Transmit(const uint8_t* data, size_t size)
-        {
-            static_cast<Implementation*>(this)->Transmit_Impl(data, size);
-        };
-
-
+        virtual void Transmit(const uint8_t* data, size_t size) = 0;
     };
 };
