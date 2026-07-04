@@ -32,9 +32,6 @@ int main()
     MX_USART1_UART_Init();
     MX_I2C1_Init();
     
-    btHC06Uart.StartReceiveIT();
-    uart2.StartReceiveIT();
-
     HAL::SoftwareTimer uartResetTimer{ 2000 };
     HAL::SoftwareTimer uart2PollTimer{ 1 };
     HAL::SoftwareTimer btUartResetTimer{ 2000 };
@@ -73,13 +70,17 @@ int main()
         return 1;
     }
 
-
     while (true)
     {
         // UART 1 Test - Bluetooth HC-06
         // connection at linux
         // sudo rfcomm connect 0 <Address>
         // on second terminal window: screen /dev/rfcomm0 9600
+
+        uart2.ProcessTx();
+        btHC06Uart.ProcessTx();
+        uart2.ProcessRx();
+        btHC06Uart.ProcessRx();
         
         if (const auto lineOpt = btLineParser.ReadLine())
         {
@@ -105,7 +106,7 @@ int main()
             uart2.Transmit(reinterpret_cast<const uint8_t*>(line.data()), line.size());
             uart2.Transmit(reinterpret_cast<const uint8_t*>("\r\n"), 2);
         }
-        
+
         // End of UART Test
 
         if (const auto result = lps25hbAsync.ReadTemperature(); result && temperatureReadingTimer.IsExpired())

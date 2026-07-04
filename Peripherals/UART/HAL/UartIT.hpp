@@ -21,27 +21,12 @@ namespace Peripherals
         private:
             UART_HandleTypeDef& huart;
             std::size_t overflowCount{ 0 };
-            UartRingBuffer<64> rxBuffer{};
-            UartRingBuffer<64> txBuffer{};
+            UartRingBuffer<BufferSize> rxBuffer{};
+            UartRingBuffer<BufferSize> txBuffer{};
             uint8_t rxByte{};
             uint8_t txByte{};
-            bool txBusy{ false };
-
-        public:
-            UartIT() = delete;
-            UartIT(const UartIT&) = delete;
-            UartIT(UartIT&&) = delete;
-            UartIT& operator=(const UartIT&) = delete;
-            UartIT& operator=(UartIT&&) = delete;
-            ~UartIT() = default;
-            explicit UartIT(UART_HandleTypeDef& huart_)
-                : huart(huart_)
-            {};
-
-            void StartReceiveIT()
-            {
-                HAL_UART_Receive_IT(&huart, &rxByte, 1);
-            }
+            volatile bool txBusy{ false };
+            volatile bool rxBusy{ false };
 
             void StartTransmitIT()
             {
@@ -61,19 +46,33 @@ namespace Peripherals
                 }
             }
 
+            void StartReceiveIT()
+            {
+                HAL_UART_Receive_IT(&huart, &rxByte, 1);
+            }
+
+        public:
+            UartIT() = delete;
+            UartIT(const UartIT&) = delete;
+            UartIT(UartIT&&) = delete;
+            UartIT& operator=(const UartIT&) = delete;
+            UartIT& operator=(UartIT&&) = delete;
+            ~UartIT() = default;
+            explicit UartIT(UART_HandleTypeDef& huart_)
+                : huart(huart_)
+            {};
+
             void RxCpltCallback()
             {
                 if (!rxBuffer.Push(rxByte))
                     ++overflowCount;
     
-                StartReceiveIT();
+                rxBusy = false;
             }
 
-            //TODO callback shoul set a state machine, and start transmit should be done by TransmitIT in the machine
             void TxCpltCallback()
             {
                 txBusy = false;
-                StartTransmitIT();
             }
 
             [[nodiscard]] std::optional<uint8_t> Read() override
@@ -91,9 +90,21 @@ namespace Peripherals
                         break;
                     }
                 }
+            }
 
-                if (!txBusy)
+            void ProcessTx()
+            {
+                if (!txBusy && !txBuffer.IsEmpty())
                     StartTransmitIT();
+            }
+
+            void ProcessRx()
+            {
+                if (!rxBusy)
+                {
+                    rxBusy = true;
+                    StartReceiveIT();
+                }
             }
         };
     }
