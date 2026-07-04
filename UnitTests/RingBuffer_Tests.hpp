@@ -11,9 +11,9 @@ protected:
 };
 
 using RingBufferTypes = ::testing::Types<
-    RingBuffer<8>,
-    RingBuffer<16>,
-    RingBuffer<32>
+    RingBuffer<uint8_t, 8>,
+    RingBuffer<uint8_t, 16>,
+    RingBuffer<uint8_t, 32>
 >;
 
 TYPED_TEST_SUITE(RingBuffer_Fixture, RingBufferTypes);

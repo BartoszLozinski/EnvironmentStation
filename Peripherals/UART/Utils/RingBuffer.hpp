@@ -3,11 +3,11 @@
 #include <array>
 #include <optional>
 
-template<std::size_t BufferSize>
+template<typename T, std::size_t BufferSize>
 class RingBuffer
 {
 private:
-    std::array<uint8_t, BufferSize> buffer{};
+    std::array<T, BufferSize> buffer{};
     // consider atomic head/tail
     volatile std::size_t head{ 0 };
     volatile std::size_t tail{ 0 };
@@ -16,7 +16,7 @@ public:
     static_assert(BufferSize > 1, "Buffer size must be greater than 1.");
     [[nodiscard]] bool IsEmpty() const { return head == tail; }
     [[nodiscard]] bool IsFull() const { return Next(head) == tail; }
-    [[nodiscard]] bool Push(const uint8_t& value)
+    [[nodiscard]] bool Push(const T& value)
     {
         const auto nextHead = Next(head);
         if (nextHead == tail) // Buffer is full
@@ -25,11 +25,11 @@ public:
         head = nextHead;
         return true;
     }
-    std::optional<uint8_t> Pop()
+    std::optional<T> Pop()
     {
         if (IsEmpty())
             return std::nullopt;
-        const uint8_t value = buffer[tail];
+        const T value = buffer[tail];
         tail = Next(tail);
         return value;
     }

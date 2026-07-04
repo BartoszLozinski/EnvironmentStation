@@ -19,7 +19,7 @@ namespace Peripherals
         private:
             UART_HandleTypeDef& huart;
             std::size_t overflowCount{ 0 };
-            RingBuffer<BufferSize> rxBuffer{};
+            RingBuffer<uint8_t, BufferSize> rxBuffer{};
             uint8_t rxByte{};
 
             void Poll_Impl(){}
