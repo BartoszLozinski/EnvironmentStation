@@ -45,21 +45,11 @@ endif()
 #####################################################################
 # End of Check
 
-add_library(${target_name} STATIC)
-
-cmake_path(GET  CMAKE_CURRENT_SOURCE_DIR    PARENT_PATH     PERIHPERALS_DIR)
-
-target_sources(${target_name}
-    PRIVATE
-        ${${target_name}_src}
-        ${CMAKE_SOURCE_DIR}
-    PUBLIC
-        FILE_SET HEADERS
-        BASE_DIRS ${PERIHPERALS_DIR}
-        FILES ${${target_name}_hpp}
+configure_library(${target_name}
+    SOURCES ${${target_name}_src}
+    HEADERS ${${target_name}_hpp}
 )
 
 configure_embedded_target(${target_name})
 configure_HAL_target(${target_name})
 
-set_target_properties(${target_name}   PROPERTIES  CXX_STANDARD 20     CXX_STANDARD_REQUIRED ON)

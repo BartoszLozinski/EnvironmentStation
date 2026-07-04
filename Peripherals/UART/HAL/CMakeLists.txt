@@ -7,16 +7,9 @@ set(${target_name}_hpp  ../IUart.hpp
                         UartIT.hpp
 )
 
-#HEADER ONLY
-add_library(${target_name} INTERFACE)
-
-cmake_path(GET  CMAKE_CURRENT_SOURCE_DIR    PARENT_PATH     PERIHPERALS_DIR)
-
-target_sources(${target_name}
-    INTERFACE
-        FILE_SET HEADERS
-        BASE_DIRS ${PERIHPERALS_DIR}
-        FILES ${${target_name}_hpp}
+configure_library(${target_name}
+    HEADER_ONLY True
+    HEADERS ${${target_name}_hpp}
 )
 
 target_link_libraries(${target_name}    INTERFACE     STM32_HAL)

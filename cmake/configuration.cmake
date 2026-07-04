@@ -9,7 +9,6 @@ function(configure_embedded_target target)
             -Wpedantic
             -fverbose-asm # additional comments for generated assembler code
 
-            
             $<$<COMPILE_LANGUAGE:C>:-Wstrict-prototypes>
 
             $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti> # disable virtual class information used by dynamic_cast and typeid
@@ -35,15 +34,49 @@ function(configure_embedded_target target)
 
 endfunction()
 
+
 function(configure_HAL_target target)
 
 
-    target_link_libraries(${target}    PRIVATE     STM32_HAL)
+    target_link_libraries(${target} PRIVATE STM32_HAL)
 
     target_compile_definitions(${target}
         PRIVATE
             USE_HAL_DRIVER
     )
+
+
+endfunction()
+
+
+function(configure_library target)
+
+
+    set(options HEADER_ONLY)
+    set(multiValueArgs SOURCES HEADERS)
+    cmake_parse_arguments(ARG "${options}" "" "${multiValueArgs}" ${ARGN})
+
+    cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH parent_dir)
+
+    if(ARG_HEADER_ONLY)
+        add_library(${target} INTERFACE)
+        target_sources(${target}
+            INTERFACE
+                FILE_SET HEADERS
+                BASE_DIRS ${parent_dir}
+                FILES ${ARG_HEADERS}
+        )
+    else()
+        add_library(${target} STATIC)
+        target_sources(${target}
+            PRIVATE
+                ${ARG_SOURCES}
+            PUBLIC
+                FILE_SET HEADERS
+                BASE_DIRS ${parent_dir}
+                FILES ${ARG_HEADERS}
+        )
+    endif()
 
 
 endfunction()
