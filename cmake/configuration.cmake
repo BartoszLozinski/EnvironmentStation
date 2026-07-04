@@ -34,3 +34,16 @@ function(configure_embedded_target target)
 
 
 endfunction()
+
+function(configure_HAL_target target)
+
+
+    target_link_libraries(${target}    PRIVATE     STM32_HAL)
+
+    target_compile_definitions(${target}
+        PRIVATE
+            USE_HAL_DRIVER
+    )
+
+
+endfunction()

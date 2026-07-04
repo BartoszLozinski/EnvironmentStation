@@ -22,10 +22,4 @@ target_sources(${target_name}
 )
 
 configure_embedded_target(${target_name})
-
-target_link_libraries(${target_name}    PRIVATE     STM32_HAL)
-
-target_compile_definitions(${target_name}
-    PRIVATE
-        USE_HAL_DRIVER
-)
+configure_HAL_target(${target_name})

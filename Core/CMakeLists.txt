@@ -17,7 +17,6 @@ target_sources(${CMAKE_PROJECT_NAME}
 target_include_directories(${CMAKE_PROJECT_NAME}    PRIVATE     Core/Inc)
 target_link_libraries(${CMAKE_PROJECT_NAME}
     PRIVATE
-        STM32_HAL
         I2C_HAL
         # Gpio_HAL
         # ADC_HAL
@@ -27,11 +26,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 )
 
 configure_embedded_target(${CMAKE_PROJECT_NAME})
-
-target_compile_definitions(${CMAKE_PROJECT_NAME}
-    PUBLIC 
-        USE_HAL_DRIVER
-)
+configure_HAL_target(${CMAKE_PROJECT_NAME})
 
 target_link_options(${CMAKE_PROJECT_NAME}           PRIVATE
     -T${LD_SCRIPT}
