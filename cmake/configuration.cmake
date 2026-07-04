@@ -1,8 +1,16 @@
 function(configure_embedded_target target)
 
+    set(options HEADER_ONLY)
+    cmake_parse_arguments(ARG "${options}" "" "" ${ARGN})
+
+    if (ARG_HEADER_ONLY)
+        set(ACCESS_TYPE INTERFACE)
+    else()
+        set(ACCESS_TYPE PRIVATE)
+    endif()
 
     target_compile_options(${target}
-        PRIVATE
+        ${ACCESS_TYPE}
             -Wall
             -Werror
             -Wextra
@@ -19,7 +27,7 @@ function(configure_embedded_target target)
     )
 
     target_compile_definitions(${target}
-        PRIVATE 
+        ${ACCESS_TYPE}
             STM32L476xx
     )
 
@@ -38,10 +46,19 @@ endfunction()
 function(configure_HAL_target target)
 
 
-    target_link_libraries(${target} PRIVATE STM32_HAL)
+    set(options HEADER_ONLY)
+    cmake_parse_arguments(ARG "${options}" "" "" ${ARGN})
+
+    if (ARG_HEADER_ONLY)
+        set(ACCESS_TYPE INTERFACE)
+    else()
+        set(ACCESS_TYPE PRIVATE)
+    endif()
+
+    target_link_libraries(${target} ${ACCESS_TYPE} STM32_HAL)
 
     target_compile_definitions(${target}
-        PRIVATE
+        ${ACCESS_TYPE}
             USE_HAL_DRIVER
     )
 
