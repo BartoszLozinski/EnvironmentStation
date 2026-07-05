@@ -1,5 +1,6 @@
 #pragma once
 #include "GpioBase.hpp"
+#include "../IGpioOutput.hpp"
 
 namespace Peripherals
 {
@@ -7,7 +8,9 @@ namespace Peripherals
     {
         template<uint8_t pin_>
         class GpioOutput : public GpioBase<GPIO_TypeDef, pin_>
+                         , public IGpioOutput<GpioOutput<pin_>>
         {
+            friend IGpioOutput<GpioOutput<pin_>>;
             using GpioBase<GPIO_TypeDef, pin_>::port;
             using GpioBase<GPIO_TypeDef, pin_>::pin;
 
@@ -21,6 +24,17 @@ namespace Peripherals
                 this->template ConfigureOSPEEDR(ospeedrOption);
                 this->template ConfigurePUPDR(pupdrOption);
             }
+
+            //Output data register ODR - reference manual 8.5.6
+            bool GetState_Impl() const { return port->ODR & PinMask<pin>() ? GpioOutputState::Set : GpioOutputState::Reset; }
+            void Set_Impl() { port->BSRR |= (0b1 << pin); }
+            void Clear_Impl()
+            {
+                static constexpr uint8_t bitShiftOffset = 16;
+                static constexpr uint8_t bitShift = bitShiftOffset + pin; //bit resets are 16-32
+                port->BSRR |= (0b1 << bitShift);
+            }
+            void Toggle_Impl() { port->ODR ^= (0b1 << pin); /*Bitwise XOR*/} //ODR has 16 bits
 
         public:
             GpioOutput(const GpioOutput& source) = delete;
@@ -36,17 +50,6 @@ namespace Peripherals
                 ConfigureAsOutput(otyperOption, ospeedrOption, pupdrOption);
             }
             ~GpioOutput() = default;
-
-            //Output data register ODR - reference manual 8.5.6
-            bool IsPinSet() const { return port->ODR & PinMask<pin>(); }
-            void Set() { port->BSRR |= (0b1 << pin); }
-            void Clear()
-            {
-                static constexpr uint8_t bitShiftOffset = 16;
-                static constexpr uint8_t bitShift = bitShiftOffset + pin; //bit resets are 16-32
-                port->BSRR |= (0b1 << bitShift);
-            }
-            void Toggle() { port->ODR ^= (0b1 << pin); /*Bitwise XOR*/} //ODR has 16 bits
         };
     }
 }

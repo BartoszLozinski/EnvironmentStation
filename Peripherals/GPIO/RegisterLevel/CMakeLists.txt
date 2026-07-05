@@ -5,6 +5,7 @@ set(${target_name}_hpp
     GpioEnums.hpp
     ../../Config.hpp
     GpioOutput.hpp
+    ../IGpioOutput.hpp
     GpioInput.hpp
     GpioAnalog.hpp
     GpioAlternate.hpp
