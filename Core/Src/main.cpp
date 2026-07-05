@@ -21,7 +21,7 @@ Peripherals::HAL::UartIT btHC06Uart{ huart1 }; //PA9 (TX), PA10 (RX)
 Peripherals::HAL::UartIT uart2{ huart2 };
 Peripherals::HAL::I2C_IT i2c1IT{ hi2c1 };
 Device::LPS25HB_Async lps25hbAsync{ i2c1IT };
-GpioOutput<GPIO_TypeDef, 5> ld2(GPIOA);
+Peripherals::RegisterLevel::GpioOutput<GPIO_TypeDef, 5> ld2(GPIOA);
 
 int main()
 {
