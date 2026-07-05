@@ -6,6 +6,10 @@ if [[ "$CONFIG" != "Debug" && "$CONFIG" != "Release" ]]; then
     exit 1
 fi
 
+if [ ! -d build ]; then
+    mkdir build
+fi
+
 if [ ! -d "build/$CONFIG" ]; then
     mkdir "build/$CONFIG"
 fi
