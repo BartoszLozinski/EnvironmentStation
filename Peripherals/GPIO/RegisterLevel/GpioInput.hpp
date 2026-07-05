@@ -14,11 +14,11 @@ namespace Peripherals
         protected:
             volatile bool interruptOccured = false;
 
-            void ConfigureAsInput(OptionsOTYPER otyperOption = GpioDefaults::otyperOption
-                                 , OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
-                                 , OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
+            void ConfigureAsInput(Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
+                                 , Gpio::OSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                                 , Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption)
             {
-                this->template ConfigureMODER(OptionsMODER::Input);
+                this->template ConfigureMODER(Gpio::MODER::Input);
                 this->template ConfigureOTYPER(otyperOption);
                 this->template ConfigureOSPEEDR(ospeedrOption);
                 this->template ConfigurePUPDR(pupdrOption);
@@ -74,9 +74,9 @@ namespace Peripherals
             GpioInput& operator=(const GpioInput& source) = delete;
             GpioInput& operator=(GpioInput&& source) = delete;
             GpioInput(GPIO_TypeDef* const port_
-                    , OptionsOTYPER otyperOption = GpioDefaults::otyperOption
-                    , OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
-                    , OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
+                    , Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
+                    , Gpio::OSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                    , Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption)
                 : GpioBase<GPIO_TypeDef, pin_>(port_)
             {
                 ConfigureAsInput(otyperOption, ospeedrOption, pupdrOption);

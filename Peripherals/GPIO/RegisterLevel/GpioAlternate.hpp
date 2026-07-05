@@ -16,12 +16,12 @@ namespace Peripherals
             GpioAlternate& operator=(GpioAlternate&& source) = delete;
             GpioAlternate(GPIO_TypeDef* const port_
                         , AlternateFunction alternateFunction
-                        , OptionsOTYPER otyperOption = GpioDefaults::otyperOption
-                        , OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
-                        , OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
+                        , Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
+                        , Gpio::OSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                        , Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption)
                 : GpioBase<GPIO_TypeDef, pin_>(port_)
             {
-                this->template ConfigureMODER(OptionsMODER::Alternate);
+                this->template ConfigureMODER(Gpio::MODER::Alternate);
                 this->template ConfigureOTYPER(otyperOption);
                 this->template ConfigureOSPEEDR(ospeedrOption);
                 this->template ConfigurePUPDR(pupdrOption);

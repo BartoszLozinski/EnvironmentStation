@@ -12,11 +12,11 @@ namespace Peripherals
             using GpioBase<GPIO_TypeDef, pin_>::pin;
 
         private:
-            void ConfigureAsOutput(const OptionsOTYPER otyperOption = GpioDefaults::otyperOption
-                , const OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
-                , const OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
+            void ConfigureAsOutput(const Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
+                , const Gpio::OSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                , const Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption)
             {
-                this->template ConfigureMODER(OptionsMODER::Output);
+                this->template ConfigureMODER(Gpio::MODER::Output);
                 this->template ConfigureOTYPER(otyperOption);
                 this->template ConfigureOSPEEDR(ospeedrOption);
                 this->template ConfigurePUPDR(pupdrOption);
@@ -28,9 +28,9 @@ namespace Peripherals
             GpioOutput& operator=(const GpioOutput& source) = delete;
             GpioOutput& operator=(GpioOutput&& source) = delete;
             GpioOutput(GPIO_TypeDef* const port_
-                      , const OptionsOTYPER otyperOption = GpioDefaults::otyperOption
-                      , const OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
-                      , const OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
+                      , const Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
+                      , const Gpio::OSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                      , const Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption)
                 : GpioBase<GPIO_TypeDef, pin_>(port_)
             {
                 ConfigureAsOutput(otyperOption, ospeedrOption, pupdrOption);

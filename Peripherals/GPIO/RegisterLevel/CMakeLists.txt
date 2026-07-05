@@ -1,7 +1,8 @@
 set(target_name Gpio_RegisterLevel)
 
 set(${target_name}_hpp
-    IGpio.hpp
+    GpioBase.hpp
+    GpioEnums.hpp
     ../../Config.hpp
     GpioOutput.hpp
     GpioInput.hpp
