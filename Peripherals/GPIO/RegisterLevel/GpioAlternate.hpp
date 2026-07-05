@@ -25,10 +25,10 @@ namespace Peripherals
                 : port(port_)
             {
                 this->EnableClock();
-                this->template ConfigureMODER<OptionsMODER::Alternate>();
-                this->template ConfigureOTYPER<otyperOption>();
-                this->template ConfigureOSPEEDR<ospeedrOption>();
-                this->template ConfigurePUPDR<pupdrOption>();
+                this->template ConfigureMODER(OptionsMODER::Alternate);
+                this->template ConfigureOTYPER(otyperOption);
+                this->template ConfigureOSPEEDR(ospeedrOption);
+                this->template ConfigurePUPDR(pupdrOption);
                 this->template ConfigureAlternateFunction(alternateFunction);
             }
         };

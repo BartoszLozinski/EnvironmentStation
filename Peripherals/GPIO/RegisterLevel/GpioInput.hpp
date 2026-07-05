@@ -18,10 +18,10 @@ namespace Peripherals
             void ConfigureAsInput()
             {
                 static_assert(pin >= 0 && pin < 16, "Invalid pin number: needs to be in range of 0 - 15!");
-                this->template ConfigureMODER<OptionsMODER::Input>();
-                this->template ConfigureOTYPER<otyperOption>();
-                this->template ConfigureOSPEEDR<ospeedrOption>();
-                this->template ConfigurePUPDR<pupdrOption>();
+                this->template ConfigureMODER(OptionsMODER::Input);
+                this->template ConfigureOTYPER(otyperOption);
+                this->template ConfigureOSPEEDR(ospeedrOption);
+                this->template ConfigurePUPDR(pupdrOption);
             }
             void ConfigureEXTICR()
             {

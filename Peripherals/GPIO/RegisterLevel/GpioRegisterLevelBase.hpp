@@ -118,8 +118,7 @@ namespace Peripherals
                     RCC->AHB2ENR |= RCC_AHB2ENR_GPIODEN;
             }
 
-            template<OptionsPUPDR pupdrOption>
-            void ConfigurePUPDR()
+            void ConfigurePUPDR(const OptionsPUPDR pupdrOption)
             {
                 using enum OptionsPUPDR;
                 static constexpr uint8_t pupdrMask = 0b11;
@@ -129,8 +128,7 @@ namespace Peripherals
                 static_cast<Derived*>(this)->port->PUPDR |= (static_cast<uint32_t>(pupdrOption) << bitShift);
             }
 
-            template<OptionsOTYPER otyperOption>
-            void ConfigureOTYPER()
+            void ConfigureOTYPER(const OptionsOTYPER otyperOption)
             {
                 using enum OptionsOTYPER;
                 static constexpr uint8_t otyperMask = 0b1;
@@ -138,8 +136,7 @@ namespace Peripherals
                 static_cast<Derived*>(this)->port->OTYPER |= (static_cast<uint32_t>(otyperOption) << Derived::pin);
             }
 
-            template<OptionsMODER moderOption>
-            void ConfigureMODER()
+            void ConfigureMODER(const OptionsMODER moderOption)
             {
                 using enum OptionsMODER;
                 static constexpr uint8_t moderMask = 0b11;
@@ -149,8 +146,7 @@ namespace Peripherals
                 static_cast<Derived*>(this)->port->MODER |= (static_cast<uint32_t>(moderOption) << bitShift);
             }
 
-            template<OptionsOSPEEDR ospeedrOption>
-            void ConfigureOSPEEDR()
+            void ConfigureOSPEEDR(const OptionsOSPEEDR ospeedrOption)
             {
                 using enum OptionsOSPEEDR;
                 static constexpr uint8_t ospeedrMask = 0b11;

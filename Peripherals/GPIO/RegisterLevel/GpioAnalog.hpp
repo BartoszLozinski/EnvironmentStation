@@ -14,9 +14,9 @@ namespace Peripherals
             {
                 static_assert(pin >= 0 && pin <= 15, "Invalid pin number: needs to be in range of 0 - 15!");
                 this->EnableClock();
-                this-> template ConfigureMODER<OptionsMODER::Analog>();
-                this-> template ConfigureOSPEEDR<OptionsOSPEEDR::LowSpeed>();
-                this-> template  ConfigurePUPDR<OptionsPUPDR::None>();
+                this-> template ConfigureMODER(OptionsMODER::Analog);
+                this-> template ConfigureOSPEEDR(OptionsOSPEEDR::LowSpeed);
+                this-> template  ConfigurePUPDR(OptionsPUPDR::None);
                 port->ASCR |= GPIO_ASCR_ASC[pin];
             }
 
