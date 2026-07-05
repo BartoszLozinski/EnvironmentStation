@@ -5,13 +5,8 @@ namespace Peripherals
 {
     namespace RegisterLevel
     {
-        template<GpioPort Port
-                , uint8_t pin_
-                , AlternateFunction alternateFunction
-                , OptionsOTYPER otyperOption = GpioDefaults::otyperOption
-                , OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
-                , OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption>
-        class GpioAlternate : public GpioRegisterLevelBase<GpioAlternate<GPIO_TypeDef, pin_, alternateFunction, otyperOption, ospeedrOption, pupdrOption>>
+        template<GpioPort Port, uint8_t pin_>
+        class GpioAlternate : public GpioRegisterLevelBase<GpioAlternate<GPIO_TypeDef, pin_>>
         {
         protected:
         public:
@@ -21,7 +16,11 @@ namespace Peripherals
             GpioAlternate(GpioAlternate&& source) = default;
             GpioAlternate& operator=(const GpioAlternate& source) = delete;
             GpioAlternate& operator=(GpioAlternate&& source) = delete;
-            GpioAlternate(Port* const port_)
+            GpioAlternate(Port* const port_
+                        , AlternateFunction alternateFunction
+                        , OptionsOTYPER otyperOption = GpioDefaults::otyperOption
+                        , OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                        , OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
                 : port(port_)
             {
                 this->EnableClock();

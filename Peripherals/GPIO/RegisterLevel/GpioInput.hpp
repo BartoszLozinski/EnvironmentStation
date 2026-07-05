@@ -5,17 +5,15 @@ namespace Peripherals
 {
     namespace RegisterLevel
     {
-        template<GpioPort Port
-                , uint8_t pin_
-                , OptionsOTYPER otyperOption = GpioDefaults::otyperOption
-                , OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
-                , OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption>
-        class GpioInput : public GpioRegisterLevelBase<GpioInput<GPIO_TypeDef, pin_, otyperOption, ospeedrOption, pupdrOption>>
+        template<GpioPort Port, uint8_t pin_>
+        class GpioInput : public GpioRegisterLevelBase<GpioInput<GPIO_TypeDef, pin_>>
         {
         protected:
             volatile bool interruptOccured = false;
 
-            void ConfigureAsInput()
+            void ConfigureAsInput(OptionsOTYPER otyperOption = GpioDefaults::otyperOption
+                                 , OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                                 , OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
             {
                 static_assert(pin >= 0 && pin < 16, "Invalid pin number: needs to be in range of 0 - 15!");
                 this->template ConfigureMODER(OptionsMODER::Input);
@@ -76,11 +74,14 @@ namespace Peripherals
             GpioInput(GpioInput&& source) = delete;
             GpioInput& operator=(const GpioInput& source) = delete;
             GpioInput& operator=(GpioInput&& source) = delete;
-            GpioInput(Port* const port_)
+            GpioInput(Port* const port_
+                    , OptionsOTYPER otyperOption = GpioDefaults::otyperOption
+                    , OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                    , OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
                 : port(port_)
             {
                 this->EnableClock();
-                ConfigureAsInput();
+                ConfigureAsInput(otyperOption, ospeedrOption, pupdrOption);
             }
 
             //RM External iterrupt/event (EXTI) GPIO Mapping (multiplexer)

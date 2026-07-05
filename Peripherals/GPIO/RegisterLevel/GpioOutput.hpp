@@ -5,15 +5,13 @@ namespace Peripherals
 {
     namespace RegisterLevel
     {
-        template<GpioPort Port
-                , uint8_t pin_
-                , OptionsOTYPER otyperOption = GpioDefaults::otyperOption
-                , OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
-                , OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption>
-        class GpioOutput : public GpioRegisterLevelBase<GpioOutput<GPIO_TypeDef, pin_, otyperOption, ospeedrOption, pupdrOption>>
+        template<GpioPort Port, uint8_t pin_>
+        class GpioOutput : public GpioRegisterLevelBase<GpioOutput<GPIO_TypeDef, pin_>>
         {
         private:
-            void ConfigureAsOutput()
+            void ConfigureAsOutput(const OptionsOTYPER otyperOption = GpioDefaults::otyperOption
+                , const OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                , const OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
             {
                 static_assert(pin >= 0 && pin < 16, "Invalid pin number: needs to be in range of 0 - 15!");
                 this->template ConfigureMODER(OptionsMODER::Output);
@@ -30,11 +28,14 @@ namespace Peripherals
             GpioOutput(GpioOutput&& source) = delete;
             GpioOutput& operator=(const GpioOutput& source) = delete;
             GpioOutput& operator=(GpioOutput&& source) = delete;
-            GpioOutput(Port* const port_)
+            GpioOutput(Port* const port_
+                      , const OptionsOTYPER otyperOption = GpioDefaults::otyperOption
+                      , const OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                      , const OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
                 : port(port_)
             {
                 this->EnableClock();
-                ConfigureAsOutput();
+                ConfigureAsOutput(otyperOption, ospeedrOption, pupdrOption);
             }
             ~GpioOutput() = default;
 

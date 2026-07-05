@@ -5,8 +5,7 @@ namespace Peripherals
 {
     namespace RegisterLevel
     {
-        template<GpioPort Port
-                , uint8_t pin_>
+        template<GpioPort Port, uint8_t pin_>
         class GpioAnalog : public GpioRegisterLevelBase<GpioAnalog<GPIO_TypeDef, pin_>>
         {
         protected:
@@ -16,7 +15,7 @@ namespace Peripherals
                 this->EnableClock();
                 this-> template ConfigureMODER(OptionsMODER::Analog);
                 this-> template ConfigureOSPEEDR(OptionsOSPEEDR::LowSpeed);
-                this-> template  ConfigurePUPDR(OptionsPUPDR::None);
+                this-> template ConfigurePUPDR(OptionsPUPDR::None);
                 port->ASCR |= GPIO_ASCR_ASC[pin];
             }
 
