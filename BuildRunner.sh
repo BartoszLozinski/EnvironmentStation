@@ -1,22 +1,28 @@
 #!/bin/bash
 
-if [ ! -d build ]; then
-    mkdir build
+CONFIG=${1:-Debug}
+if [[ "$CONFIG" != "Debug" && "$CONFIG" != "Release" ]]; then
+    echo "Usage: $0 [Debug|Release]"
+    exit 1
 fi
 
-cd build
-cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain-arm-gcc.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug
-ninja
-
-cd ..
-
-if [ ! -d buildTests ]; then
-    mkdir buildTests
+if [ ! -d "build/$CONFIG" ]; then
+    mkdir "build/$CONFIG"
 fi
 
-cd buildTests
-cmake ../UnitTests -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cd "build/$CONFIG"
+cmake ../.. -G Ninja -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchain-arm-gcc.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=$CONFIG
 ninja
 
-cd ..
+cd ../..
+
+if [ ! -d "buildTests/$CONFIG" ]; then
+    mkdir "buildTests/$CONFIG"
+fi
+
+cd "buildTests/$CONFIG"
+cmake ../../UnitTests -G Ninja -DCMAKE_BUILD_TYPE=$CONFIG
+ninja
+
+cd ../..
 
