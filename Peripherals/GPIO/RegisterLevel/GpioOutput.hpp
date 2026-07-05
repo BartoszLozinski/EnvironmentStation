@@ -42,7 +42,8 @@ namespace Peripherals
             void Set() { port->BSRR |= (0b1 << pin); }
             void Clear()
             {
-                static constexpr uint8_t bitShift = 16 + pin; //bit resets are 16-32
+                static constexpr uint8_t bitShiftOffset = 16;
+                static constexpr uint8_t bitShift = bitShiftOffset + pin; //bit resets are 16-32
                 port->BSRR |= (0b1 << bitShift);
             }
             void Toggle() { port->ODR ^= (0b1 << pin); /*Bitwise XOR*/} //ODR has 16 bits

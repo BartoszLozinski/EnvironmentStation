@@ -108,7 +108,7 @@ namespace Peripherals
             }
 
             bool ReadPin() const {return port->IDR & PinMask<pin>();} //true - high state, false - low state
-            void ClearInterruptFlag() { this->interruptOccured = false; };
+            void ClearInterruptFlag() { interruptOccured = false; };
             void IrqHandler()
             {
                 if (EXTI->PR1 & EXTI_PR1_PIF[pin])
@@ -118,7 +118,7 @@ namespace Peripherals
                     interruptOccured = true;
                 }
             }
-            bool InterruptOccured() const { return this->interruptOccured; }
+            bool InterruptOccured() const { return interruptOccured; }
 
         };
     }
