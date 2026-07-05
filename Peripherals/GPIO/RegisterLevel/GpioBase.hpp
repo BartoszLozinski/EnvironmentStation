@@ -103,7 +103,7 @@ namespace Peripherals
         };
 
         template<typename Derived>
-        class GpioRegisterLevelBase
+        class GpioBase
         {
         protected:	
             void EnableClock()

@@ -1,12 +1,12 @@
 #pragma once
-#include "GpioRegisterLevelBase.hpp"
+#include "GpioBase.hpp"
 
 namespace Peripherals
 {
     namespace RegisterLevel
     {
         template<GpioPort Port, uint8_t pin_>
-        class GpioInput : public GpioRegisterLevelBase<GpioInput<GPIO_TypeDef, pin_>>
+        class GpioInput : public GpioBase<GpioInput<GPIO_TypeDef, pin_>>
         {
         protected:
             volatile bool interruptOccured = false;

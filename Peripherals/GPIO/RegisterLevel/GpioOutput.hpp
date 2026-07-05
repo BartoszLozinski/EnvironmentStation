@@ -1,12 +1,12 @@
 #pragma once
-#include "GpioRegisterLevelBase.hpp"
+#include "GpioBase.hpp"
 
 namespace Peripherals
 {
     namespace RegisterLevel
     {
         template<GpioPort Port, uint8_t pin_>
-        class GpioOutput : public GpioRegisterLevelBase<GpioOutput<GPIO_TypeDef, pin_>>
+        class GpioOutput : public GpioBase<GpioOutput<GPIO_TypeDef, pin_>>
         {
         private:
             void ConfigureAsOutput(const OptionsOTYPER otyperOption = GpioDefaults::otyperOption

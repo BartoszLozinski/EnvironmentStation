@@ -1,12 +1,12 @@
 #pragma once
-#include "GpioRegisterLevelBase.hpp"
+#include "GpioBase.hpp"
 
 namespace Peripherals
 {
     namespace RegisterLevel
     {
         template<GpioPort Port, uint8_t pin_>
-        class GpioAnalog : public GpioRegisterLevelBase<GpioAnalog<GPIO_TypeDef, pin_>>
+        class GpioAnalog : public GpioBase<GpioAnalog<GPIO_TypeDef, pin_>>
         {
         protected:
             void ConfigureAsAnalog()

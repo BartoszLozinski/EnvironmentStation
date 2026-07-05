@@ -1,12 +1,12 @@
 #pragma once
-#include "GpioRegisterLevelBase.hpp"
+#include "GpioBase.hpp"
 
 namespace Peripherals
 {
     namespace RegisterLevel
     {
         template<GpioPort Port, uint8_t pin_>
-        class GpioAlternate : public GpioRegisterLevelBase<GpioAlternate<GPIO_TypeDef, pin_>>
+        class GpioAlternate : public GpioBase<GpioAlternate<GPIO_TypeDef, pin_>>
         {
         protected:
         public:
