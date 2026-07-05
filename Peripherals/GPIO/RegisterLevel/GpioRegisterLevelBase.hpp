@@ -3,10 +3,16 @@
 #include <cstdint>
 #include <concepts>
 
+
 namespace Peripherals
 {
     namespace RegisterLevel
     {
+        static constexpr std::array<uint32_t, 16> GPIO_ASCR_ASC = {
+            GPIO_ASCR_ASC0, GPIO_ASCR_ASC1, GPIO_ASCR_ASC2, GPIO_ASCR_ASC3, GPIO_ASCR_ASC4, GPIO_ASCR_ASC5, GPIO_ASCR_ASC6, GPIO_ASCR_ASC7,
+            GPIO_ASCR_ASC8, GPIO_ASCR_ASC9, GPIO_ASCR_ASC10, GPIO_ASCR_ASC11, GPIO_ASCR_ASC12, GPIO_ASCR_ASC13, GPIO_ASCR_ASC14, GPIO_ASCR_ASC15
+        };
+
         enum class OptionsPUPDR
         {
             // GPIOx_PUPDR (GPIO port pull-up/pull-down register):
