@@ -11,6 +11,8 @@
 #include "../../Peripherals/UART/HAL/UartIT.hpp"
 #include "../../Peripherals/UART/LineParser.hpp"
 
+#include "../../Peripherals/GPIO/RegisterLevel/GpioOutput.hpp"
+
 #include "../../Devices/LPS25HB.hpp"
 #include "../../Devices/LPS25HB_Async.hpp"
 
@@ -19,6 +21,7 @@ Peripherals::HAL::UartIT btHC06Uart{ huart1 }; //PA9 (TX), PA10 (RX)
 Peripherals::HAL::UartIT uart2{ huart2 };
 Peripherals::HAL::I2C_IT i2c1IT{ hi2c1 };
 Device::LPS25HB_Async lps25hbAsync{ i2c1IT };
+GpioOutput<GPIO_TypeDef, 5> ld2(GPIOA);
 
 int main()
 {
@@ -32,6 +35,7 @@ int main()
     MX_USART1_UART_Init();
     MX_I2C1_Init();
     
+    HAL::SoftwareTimer ld2Timer{ 500 };
     HAL::SoftwareTimer uartResetTimer{ 2000 };
     HAL::SoftwareTimer uart2PollTimer{ 1 };
     HAL::SoftwareTimer btUartResetTimer{ 2000 };
@@ -123,6 +127,12 @@ int main()
             char messageBuffer[32];
             snprintf(messageBuffer, sizeof(messageBuffer), "Pressure LPS IT: %lu hPa\r\n", result.value());
             uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
+        }
+
+        if (ld2Timer.IsExpired())
+        {
+            ld2Timer.Reset();
+            ld2.Toggle();
         }
     }
 }

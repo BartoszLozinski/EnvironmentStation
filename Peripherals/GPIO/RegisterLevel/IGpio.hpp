@@ -1,5 +1,5 @@
 #pragma once
-#include "Config.hpp"
+#include "../../Config.hpp"
 #include <cstdint>
 #include <concepts>
 
@@ -95,8 +95,7 @@ concept GpioPort = requires(T port) {
 template<typename Derived>
 class IGpio
 {
-    protected:	
-
+protected:	
 	void EnableClock()
 	{
 		if (static_cast<Derived*>(this)->port == GPIOA)
