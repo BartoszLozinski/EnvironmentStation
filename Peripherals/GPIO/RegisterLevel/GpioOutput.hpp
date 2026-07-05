@@ -5,15 +5,17 @@ namespace Peripherals
 {
     namespace RegisterLevel
     {
-        template<GpioPort Port, uint8_t pin_>
-        class GpioOutput : public GpioBase<GpioOutput<GPIO_TypeDef, pin_>>
+        template<uint8_t pin_>
+        class GpioOutput : public GpioBase<GPIO_TypeDef, pin_>
         {
+            using GpioBase<GPIO_TypeDef, pin_>::port;
+            using GpioBase<GPIO_TypeDef, pin_>::pin;
+
         private:
             void ConfigureAsOutput(const OptionsOTYPER otyperOption = GpioDefaults::otyperOption
                 , const OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
                 , const OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
             {
-                static_assert(pin >= 0 && pin < 16, "Invalid pin number: needs to be in range of 0 - 15!");
                 this->template ConfigureMODER(OptionsMODER::Output);
                 this->template ConfigureOTYPER(otyperOption);
                 this->template ConfigureOSPEEDR(ospeedrOption);
@@ -21,20 +23,16 @@ namespace Peripherals
             }
 
         public:
-            volatile Port* const port = nullptr;
-            static constexpr uint8_t pin = pin_;
-
             GpioOutput(const GpioOutput& source) = delete;
             GpioOutput(GpioOutput&& source) = delete;
             GpioOutput& operator=(const GpioOutput& source) = delete;
             GpioOutput& operator=(GpioOutput&& source) = delete;
-            GpioOutput(Port* const port_
+            GpioOutput(GPIO_TypeDef* const port_
                       , const OptionsOTYPER otyperOption = GpioDefaults::otyperOption
                       , const OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
                       , const OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
-                : port(port_)
+                : GpioBase<GPIO_TypeDef, pin_>(port_)
             {
-                this->EnableClock();
                 ConfigureAsOutput(otyperOption, ospeedrOption, pupdrOption);
             }
             ~GpioOutput() = default;

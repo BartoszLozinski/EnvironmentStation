@@ -5,9 +5,12 @@ namespace Peripherals
 {
     namespace RegisterLevel
     {
-        template<GpioPort Port, uint8_t pin_>
-        class GpioInput : public GpioBase<GpioInput<GPIO_TypeDef, pin_>>
+        template<uint8_t pin_>
+        class GpioInput : public GpioBase<GPIO_TypeDef, pin_>
         {
+            using GpioBase<GPIO_TypeDef, pin_>::port;
+            using GpioBase<GPIO_TypeDef, pin_>::pin;
+
         protected:
             volatile bool interruptOccured = false;
 
@@ -15,7 +18,6 @@ namespace Peripherals
                                  , OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
                                  , OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
             {
-                static_assert(pin >= 0 && pin < 16, "Invalid pin number: needs to be in range of 0 - 15!");
                 this->template ConfigureMODER(OptionsMODER::Input);
                 this->template ConfigureOTYPER(otyperOption);
                 this->template ConfigureOSPEEDR(ospeedrOption);
@@ -28,13 +30,13 @@ namespace Peripherals
                 //EXTICR1 (index 0): pins 0 - 3, EXTICR2 (1): pins 4 - 7; EXTICR3(2): pins 8- 11; EXTICR4(3): pins 12 - 15
                 constexpr uint8_t extiCrIndex = pin / 4;
                 SYSCFG->EXTICR[extiCrIndex] &= ~SYSCFG_EXTI[pin]; //reset to 0000 (defualt value);
-                if (this->port == GPIOA)
+                if (port == GPIOA)
                     SYSCFG->EXTICR[extiCrIndex] |= SYSCFG_EXTI_PA[pin]; //example for pin PC13 = GPIOC_BASE, pin 13 (index is proper, as pins are 0 - 15)
-                else if (this->port == GPIOB)
+                else if (port == GPIOB)
                     SYSCFG->EXTICR[extiCrIndex] |= SYSCFG_EXTI_PB[pin];
-                else if (this->port == GPIOC)
+                else if (port == GPIOC)
                     SYSCFG->EXTICR[extiCrIndex] |= SYSCFG_EXTI_PC[pin];
-                else if (this->port == GPIOD)
+                else if (port == GPIOD)
                     SYSCFG->EXTICR[extiCrIndex] |= SYSCFG_EXTI_PD[pin];
             }
 
@@ -67,20 +69,16 @@ namespace Peripherals
             }
 
         public:
-            volatile Port* const port = nullptr;
-            static constexpr uint8_t pin = pin_;
-
             GpioInput(const GpioInput& source) = delete;
             GpioInput(GpioInput&& source) = delete;
             GpioInput& operator=(const GpioInput& source) = delete;
             GpioInput& operator=(GpioInput&& source) = delete;
-            GpioInput(Port* const port_
+            GpioInput(GPIO_TypeDef* const port_
                     , OptionsOTYPER otyperOption = GpioDefaults::otyperOption
                     , OptionsOSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
                     , OptionsPUPDR pupdrOption = GpioDefaults::pupdrOption)
-                : port(port_)
+                : GpioBase<GPIO_TypeDef, pin_>(port_)
             {
-                this->EnableClock();
                 ConfigureAsInput(otyperOption, ospeedrOption, pupdrOption);
             }
 
@@ -109,7 +107,7 @@ namespace Peripherals
                 ConfigureExtiPriority<priority>();
             }
 
-            bool ReadPin() const {return this->port->IDR & PinMask<pin>();} //true - high state, false - low state
+            bool ReadPin() const {return port->IDR & PinMask<pin>();} //true - high state, false - low state
             void ClearInterruptFlag() { this->interruptOccured = false; };
             void IrqHandler()
             {

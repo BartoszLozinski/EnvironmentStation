@@ -5,9 +5,12 @@ namespace Peripherals
 {
     namespace RegisterLevel
     {
-        template<GpioPort Port, uint8_t pin_>
-        class GpioAnalog : public GpioBase<GpioAnalog<GPIO_TypeDef, pin_>>
+        template<uint8_t pin_>
+        class GpioAnalog : public GpioBase<GPIO_TypeDef, pin_>
         {
+            using GpioBase<GPIO_TypeDef, pin_>::port;
+            using GpioBase<GPIO_TypeDef, pin_>::pin;
+
         protected:
             void ConfigureAsAnalog()
             {
@@ -20,14 +23,12 @@ namespace Peripherals
             }
 
         public:
-            volatile Port* const port = nullptr;
-            static constexpr uint8_t pin = pin_;
             GpioAnalog(const GpioAnalog& source) = default;
             GpioAnalog(GpioAnalog&& source) = default;
             GpioAnalog& operator=(const GpioAnalog& source) = delete;
             GpioAnalog& operator=(GpioAnalog&& source) = delete;
-            GpioAnalog(Port* const port_)
-                : port(port_)
+            GpioAnalog(GPIO_TypeDef* const port_)
+                : GpioBase<GPIO_TypeDef, pin_>(port_)
             {
                 ConfigureAsAnalog();
             }

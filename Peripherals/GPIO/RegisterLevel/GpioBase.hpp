@@ -102,61 +102,64 @@ namespace Peripherals
             { port.ASCR } -> std::convertible_to<volatile uint32_t&>;
         };
 
-        template<typename Derived>
+        template<GpioPort Port, uint8_t pin_>
         class GpioBase
         {
-        protected:	
+        private:
             void EnableClock()
             {
-                if (static_cast<Derived*>(this)->port == GPIOA)
+                if (port == GPIOA)
                     RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;
-                else if (static_cast<Derived*>(this)->port == GPIOB)
+                else if (port == GPIOB)
                     RCC->AHB2ENR |= RCC_AHB2ENR_GPIOBEN;
-                else if (static_cast<Derived*>(this)->port == GPIOC)
+                else if (port == GPIOC)
                     RCC->AHB2ENR |= RCC_AHB2ENR_GPIOCEN;
-                else if (static_cast<Derived*>(this)->port == GPIOD)
+                else if (port == GPIOD)
                     RCC->AHB2ENR |= RCC_AHB2ENR_GPIODEN;
             }
+
+        protected:
+            volatile Port* const port = nullptr;
+            static constexpr uint8_t pin = pin_;
 
             void ConfigurePUPDR(const OptionsPUPDR pupdrOption)
             {
                 using enum OptionsPUPDR;
                 static constexpr uint8_t pupdrMask = 0b11;
-                static constexpr uint8_t bitShift = 2 * Derived::pin;
+                static constexpr uint8_t bitShift = 2 * pin;
 
-                static_cast<Derived*>(this)->port->PUPDR &= ~(pupdrMask << bitShift);
-                static_cast<Derived*>(this)->port->PUPDR |= (static_cast<uint32_t>(pupdrOption) << bitShift);
+                port->PUPDR &= ~(pupdrMask << bitShift);
+                port->PUPDR |= (static_cast<uint32_t>(pupdrOption) << bitShift);
             }
 
             void ConfigureOTYPER(const OptionsOTYPER otyperOption)
             {
                 using enum OptionsOTYPER;
                 static constexpr uint8_t otyperMask = 0b1;
-                static_cast<Derived*>(this)->port->OTYPER &= ~(otyperMask << Derived::pin);//clear bits
-                static_cast<Derived*>(this)->port->OTYPER |= (static_cast<uint32_t>(otyperOption) << Derived::pin);
+                port->OTYPER &= ~(otyperMask << pin);//clear bits
+                port->OTYPER |= (static_cast<uint32_t>(otyperOption) << pin);
             }
 
             void ConfigureMODER(const OptionsMODER moderOption)
             {
                 using enum OptionsMODER;
                 static constexpr uint8_t moderMask = 0b11;
-                static constexpr uint8_t bitShift = 2 * Derived::pin;
+                static constexpr uint8_t bitShift = 2 * pin;
 
-                static_cast<Derived*>(this)->port->MODER &= ~(moderMask << bitShift);//clear bits
-                static_cast<Derived*>(this)->port->MODER |= (static_cast<uint32_t>(moderOption) << bitShift);
+                port->MODER &= ~(moderMask << bitShift);//clear bits
+                port->MODER |= (static_cast<uint32_t>(moderOption) << bitShift);
             }
 
             void ConfigureOSPEEDR(const OptionsOSPEEDR ospeedrOption)
             {
                 using enum OptionsOSPEEDR;
                 static constexpr uint8_t ospeedrMask = 0b11;
-                static constexpr uint8_t bitShift = 2 * Derived::pin;
+                static constexpr uint8_t bitShift = 2 * pin;
 
-                static_cast<Derived*>(this)->port->OSPEEDR &= ~(ospeedrMask << bitShift);//clear bits
-                static_cast<Derived*>(this)->port->OSPEEDR |= (static_cast<uint32_t>(ospeedrOption) << bitShift);
+                port->OSPEEDR &= ~(ospeedrMask << bitShift);//clear bits
+                port->OSPEEDR |= (static_cast<uint32_t>(ospeedrOption) << bitShift);
             }
 
-        public:
             //Datasheet Pinouts and pin description
             //AF2 Datasheet Alternate functino 0 - 7 / 8 -15
             //RM 8.5.10 GPIO alternate function low/high register
@@ -164,11 +167,19 @@ namespace Peripherals
             {
                 using enum AlternateFunction;
 
-                uint8_t LowOrHigh = Derived::pin <= 7 ? 0 : 1;
+                uint8_t LowOrHigh = pin <= 7 ? 0 : 1;
                 static constexpr uint32_t AFMask = 0b1111;
-                static constexpr uint32_t bitShift = 4 * (Derived::pin % 8); //AF is 4 bits wide
-                static_cast<Derived*>(this)->port->AFR[LowOrHigh] &= ~(AFMask << bitShift);
-                static_cast<Derived*>(this)->port->AFR[LowOrHigh] |= (static_cast<uint32_t>(af) << bitShift);
+                static constexpr uint32_t bitShift = 4 * (pin % 8); //AF is 4 bits wide
+                port->AFR[LowOrHigh] &= ~(AFMask << bitShift);
+                port->AFR[LowOrHigh] |= (static_cast<uint32_t>(af) << bitShift);
+            }
+
+        public:
+            GpioBase(Port* const port_)
+                : port(port_)
+            {
+                static_assert(pin >= 0 && pin < 16, "Invalid pin number: needs to be in range of 0 - 15!");
+                EnableClock();
             }
         };
 
