@@ -28,28 +28,8 @@ namespace Peripherals
             volatile bool txBusy{ false };
             volatile bool rxBusy{ false };
 
-            void StartTransmitIT()
-            {
-                if (txBusy || txBuffer.IsEmpty())
-                    return;
-
-                txBusy = true;
-                
-                if (const auto byte = txBuffer.Pop())
-                {
-                    txByte = byte.value();
-                    HAL_UART_Transmit_IT(&huart, &txByte, 1);
-                }
-                else
-                {
-                    txBusy = false;
-                }
-            }
-
-            void StartReceiveIT()
-            {
-                HAL_UART_Receive_IT(&huart, &rxByte, 1);
-            }
+            void StartTransmitIT();
+            void StartReceiveIT();
 
         public:
             UartIT() = delete;
@@ -62,50 +42,12 @@ namespace Peripherals
                 : huart(huart_)
             {};
 
-            void RxCpltCallback()
-            {
-                if (!rxBuffer.Push(rxByte))
-                    ++overflowCount;
-    
-                rxBusy = false;
-            }
-
-            void TxCpltCallback()
-            {
-                txBusy = false;
-            }
-
-            [[nodiscard]] std::optional<uint8_t> Read() override
-            {
-                return rxBuffer.Pop();
-            }
-
-            void Transmit(const uint8_t* data, size_t size) override
-            {
-                for (size_t i = 0; i < size; ++i)
-                {
-                    if (!txBuffer.Push(data[i]))
-                    {
-                        ++overflowCount; // or handle drop differently
-                        break;
-                    }
-                }
-            }
-
-            void ProcessTx()
-            {
-                if (!txBusy && !txBuffer.IsEmpty())
-                    StartTransmitIT();
-            }
-
-            void ProcessRx()
-            {
-                if (!rxBusy)
-                {
-                    rxBusy = true;
-                    StartReceiveIT();
-                }
-            }
+            void RxCpltCallback();
+            void TxCpltCallback();
+            [[nodiscard]] std::optional<uint8_t> Read() override;
+            void Transmit(const uint8_t* data, size_t size) override;
+            void ProcessTx();
+            void ProcessRx();
         };
     }
 }

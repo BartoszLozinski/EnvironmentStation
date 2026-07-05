@@ -1,5 +1,9 @@
 set(target_name UART_HAL)
 
+set(${target_name}_src  UartIT.cpp
+)
+
+
 set(${target_name}_hpp  ../IUart.hpp
                         ../LineParser.hpp
                         ../Utils/RingBuffer.hpp
@@ -8,14 +12,14 @@ set(${target_name}_hpp  ../IUart.hpp
 )
 
 configure_library(${target_name}
-    HEADER_ONLY True
+    SOURCES ${${target_name}_src}
     HEADERS ${${target_name}_hpp}
 )
 
 configure_embedded_target(${target_name}
-    HEADER_ONLY True
+    #HEADER_ONLY True
 )
 
 configure_HAL_target(${target_name}
-    HEADER_ONLY True
+    #HEADER_ONLY True
 )
