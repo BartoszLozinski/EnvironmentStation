@@ -15,7 +15,7 @@ namespace Peripherals
             GpioAlternate& operator=(const GpioAlternate& source) = delete;
             GpioAlternate& operator=(GpioAlternate&& source) = delete;
             GpioAlternate(GPIO_TypeDef* const port_
-                        , AlternateFunction alternateFunction
+                        , Gpio::AlternateFunction alternateFunction
                         , Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
                         , Gpio::OSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
                         , Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption)

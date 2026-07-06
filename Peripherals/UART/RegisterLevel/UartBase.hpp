@@ -19,8 +19,7 @@
 #include <array>
 #include <concepts>
 
-#include "GpioAlternate.hpp"
-#include "Timer.hpp"
+#include "Peripherals/GPIO/RegisterLevel/GpioAlternate.hpp"
 
 //concept basing on USART_TypeDef struct from CMSIS
 template<typename T>
@@ -43,16 +42,11 @@ concept USARTx = requires (T uart)
 	{ uart.RESERVED5 }  -> std::convertible_to<uint16_t&>;				/*!< Reserved, 0x2A                                                 */
 };
 
-template<USARTx Usart, GpioPort RxTx, uint32_t baudRate = 115200, std::size_t bufferSize = 80>
-class UART
+template<USARTx Usart, Peripherals::RegisterLevel::GpioPort RxTx, uint32_t baudRate = 115200, std::size_t bufferSize = 80>
+class Uart
 {
 protected:
 	volatile Usart* const usart = nullptr;
-	volatile RxTx* rx = nullptr;
-	volatile RxTx* tx = nullptr;
-
-	char actualChar;
-	std::array<char, bufferSize> buffer_ {};
 
 	inline void EnableClock() { RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN; };
 	
@@ -97,10 +91,10 @@ protected:
 			RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN;
 
 		//USART Baud Rate Register BRR - speed of the USART1
-		//UARTDIV (RM 40.8 USART baud rate register) = 4 000 000 / 115200 = 34,7
+		//UARTDIV (RM 40.8 USART baud rate register) = 80 000 000 / 115200 = 34,7
 		//USART2 uses PCLK1 clock by default (reset state 00)
 		//know from USART2SEL bits value
-		usart->BRR = 4000000 / baudRate;
+		usart->BRR = SystemCoreClock / baudRate; /// system_stm32l4xx.c file
 
 		//frame 8m1 -- 0b00 - for USART_CR1 (reset value)
 		//PCE parity control enable: 0 - disabled (reset value), 1 - enabled
@@ -115,93 +109,16 @@ protected:
 
 
 public:
-	UART(const UART& source) = delete;
-	UART(UART&& source) = delete;
-	UART& operator=(const UART& source) = delete;
-	UART& operator=(UART&& source) = delete;
-	UART(Usart* const usart_) 
+	Uart(const Uart& source) = delete;
+	Uart(Uart&& source) = delete;
+	Uart& operator=(const Uart& source) = delete;
+	Uart& operator=(Uart&& source) = delete;
+	Uart(Usart* const usart_) 
 		: usart(usart_)
-		, index_(buffer_.begin())
 	{
-		this->EnableClock();
+		EnableClock();
 		UartConfig();
 	};
-
-	void SendChar(const char ch)
-	{
-		//put data to transmit register
-		//Transmit data register TDR
-		usart->TDR = ch;
-		while(!(USART2->ISR & USART_ISR_TC)) {} //just wait
-		//interrupt status register ISR - what happens inside UART
-		//bit TXE - transmit data register empty
-		//0 - data is not transferred to the shift register
-		//1 - data is transferred to the shift register
-		//TC transmission complete - 0 (not complete) - 1 (complete)
-	};
-	void SendString(const char str[])
-	{
-		if (str)
-		{
-			while (*str != '\0')
-			{
-				SendChar(*str);
-				str++;
-			}
-			SendChar('\r');
-			SendChar('\n');
-		}
-	};
-
-	ERROR_CODE GetChar()
-	{
-		//_______________RECEIVE___________________
-		//RXNE - read data register is not empty
-		//if not empty - we can receive something
-		//0 - data is not received
-		//1 - received data is ready to be read
-
-		//by one sign
-		using enum ERROR_CODE;
-		if (usart->ISR & USART_ISR_RXNE)
-		{
-			actualChar = usart->RDR;
-			return OK;
-		}
-		return NOK;
-	};
-	ERROR_CODE GetString()
-	{
-		uint8_t i = 0;
-		while (i < buffer_.size() - 1)
-		{
-			Timer receiverTimer(50);
-			if (usart->ISR & USART_ISR_RXNE)
-			{
-				const char c = static_cast<char>(usart->RDR);
-				if (c == '\r' || c == '\n')
-					break;
-				else
-					buffer_[i++] = c;
-			}
-			if (receiverTimer.IsExpired())
-				break;
-		}
-
-		buffer_[i] = '\0';
-		return (i > 0) ? ERROR_CODE::OK : ERROR_CODE::NOK;
-	};
-	ERROR_CODE GetStringIT()
-	{
-		if (messageReady_)
-		{
-			messageReady_ = false;
-			return ERROR_CODE::OK;
-		}
-		return ERROR_CODE::NOK;
-	};
-	inline std::array<char, bufferSize>GetBuffer() { return this->buffer_; }
-	inline char GetActualChar() { return this->actualChar; }
 
 	void ConfigureExtiReceive()
 	{
@@ -215,30 +132,4 @@ public:
 		NVIC_EnableIRQ(USART2_IRQn);//enable interrupt
 		//enum from stm32l476xx.h (CMSIS file) - Interrupt number definition
 	};
-	void ClearBuffer()
-	{
-		index_ = buffer_.begin();
-		buffer_.fill('\0');
-	};
-	void IRQ_Handler()
-	{
-		using enum ERROR_CODE;
-		//read data register is not empty (1)
-		if (usart->ISR & USART_ISR_RXNE)
-		{
-			const char received = usart->RDR; //Read data register
-			if (received == '\n' || received == '\r' || index_ >= buffer_.end() - 1)
-			{
-				*index_ = '\0';
-				messageReady_ = true;
-				index_ = buffer_.begin();
-			}
-			else
-			{
-				*index_ = received;
-				index_++;
-			}
-		}
-	};
-
 };

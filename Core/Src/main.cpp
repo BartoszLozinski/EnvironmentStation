@@ -12,6 +12,9 @@
 #include "../../Peripherals/UART/LineParser.hpp"
 
 #include "../../Peripherals/GPIO/RegisterLevel/GpioOutput.hpp"
+#include "../../Peripherals/UART/RegisterLevel/UartBase.hpp"
+
+
 
 #include "../../Devices/LPS25HB.hpp"
 #include "../../Devices/LPS25HB_Async.hpp"

@@ -6,7 +6,8 @@ set(target_name UART_RegisterLevel)
 set(${target_name}_hpp  ../IUart.hpp
                         ../LineParser.hpp
                         ../Utils/RingBuffer.hpp
-                        Uart.hpp
+                        uartBase.hpp
+                        #UartLegacy.hpp
                         ../../Config.hpp
 )
 
@@ -14,6 +15,10 @@ configure_library(${target_name}
     HEADER_ONLY True
     HEADERS ${${target_name}_hpp}
 )
+
+target_link_libraries(${target_name}
+    INTERFACE
+        Gpio_RegisterLevel)
 
 configure_embedded_target(${target_name}
     HEADER_ONLY True
