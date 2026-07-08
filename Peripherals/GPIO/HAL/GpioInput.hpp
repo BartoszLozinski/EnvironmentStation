@@ -11,11 +11,9 @@ namespace Peripherals
 {
     namespace HAL
     {
-        class GpioInput : public IGpioInput<GpioInput>
+        class GpioInput : public IGpioInput
         {
-            friend IGpioInput<GpioInput>;
         private:
-            uint32_t Read_Impl() const;
             GPIO_TypeDef& port;
             uint16_t pin;
         public:
@@ -27,6 +25,7 @@ namespace Peripherals
             ~GpioInput() = default;
 
             GpioInput(GPIO_TypeDef& port_, const uint16_t pin_);
+            uint32_t Read() const override;
         };
     };
 };

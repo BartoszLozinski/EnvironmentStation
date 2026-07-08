@@ -8,13 +8,14 @@ namespace Peripherals
         Reset,
     };
 
-    template<typename Implementation>
     class IGpioOutput
     {
     public:
-        void Set() { static_cast<Implementation*>(this)->Set_Impl(); }
-        void Clear() { static_cast<Implementation*>(this)->Clear_Impl(); }
-        void Toggle() { static_cast<Implementation*>(this)->Toggle_Impl(); }
-        GpioOutputState GetState() const { return static_cast<const Implementation*>(this)->GetState_Impl(); }
+        virtual void Set() = 0;
+        virtual void Clear() = 0;
+        virtual void Toggle() = 0;
+        virtual GpioOutputState GetState() const = 0;
+
+        virtual ~IGpioOutput() = default;
     };
 }

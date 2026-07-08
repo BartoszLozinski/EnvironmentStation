@@ -2,11 +2,11 @@
 
 namespace Peripherals
 {
-    template<typename Implementation>
     class IGpioInput
     {
     public:
-        uint32_t Read() const { return static_cast<const Implementation*>(this)->Read_Impl(); }
+        virtual uint32_t Read() const = 0;
+        virtual ~IGpioInput() = default;
     };
 
     /*

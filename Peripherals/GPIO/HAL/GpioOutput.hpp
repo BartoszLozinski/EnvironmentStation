@@ -11,9 +11,8 @@ namespace Peripherals
 {
     namespace HAL
     {
-        class GpioOutput : public IGpioOutput<GpioOutput>
+        class GpioOutput : public IGpioOutput
         {
-        friend IGpioOutput<GpioOutput>;
         private:
             void Set_Impl();
             void Clear_Impl();
@@ -32,6 +31,10 @@ namespace Peripherals
 
             GpioOutput(GPIO_TypeDef& port_, const uint16_t pin_);
 
+            void Set() override;
+            void Clear() override;
+            void Toggle() override;
+            GpioOutputState GetState() const override;
         };
     };
 };

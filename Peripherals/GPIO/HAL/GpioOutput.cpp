@@ -8,22 +8,22 @@ namespace Peripherals
         : port(port_), pin(pin_)
         {}
 
-        void GpioOutput::Set_Impl()
+        void GpioOutput::Set()
         {
             HAL_GPIO_WritePin(&port, pin, GPIO_PIN_SET);
         }
 
-        void GpioOutput::Clear_Impl()
+        void GpioOutput::Clear()
         {
             HAL_GPIO_WritePin(&port, pin, GPIO_PIN_RESET);
         }
 
-        void GpioOutput::Toggle_Impl()
+        void GpioOutput::Toggle()
         {
             HAL_GPIO_TogglePin(&port, pin);
         }
 
-        GpioOutputState GpioOutput::GetState_Impl() const
+        GpioOutputState GpioOutput::GetState() const
         {
             return (HAL_GPIO_ReadPin(&port, pin) == GPIO_PIN_SET) ? GpioOutputState::Set : GpioOutputState::Reset;
         }
