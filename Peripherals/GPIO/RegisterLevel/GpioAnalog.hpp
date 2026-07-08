@@ -12,13 +12,9 @@ namespace Peripherals
             using GpioBase<GPIO_TypeDef, pin_>::pin;
 
         protected:
-            void ConfigureAsAnalog()
+
+            void ConnectAnalogSwitch(const uint8_t pin)
             {
-                static_assert(pin >= 0 && pin <= 15, "Invalid pin number: needs to be in range of 0 - 15!");
-                this->EnableClock();
-                this-> template ConfigureMODER(Gpio::MODER::Analog);
-                this-> template ConfigureOSPEEDR(Gpio::OSPEEDR::LowSpeed);
-                this-> template ConfigurePUPDR(Gpio::PUPDR::None);
                 port->ASCR |= GPIO_ASCR_ASC[pin];
             }
 
@@ -31,6 +27,18 @@ namespace Peripherals
                 : GpioBase<GPIO_TypeDef, pin_>(port_)
             {
                 ConfigureAsAnalog();
+            }
+
+            void Init(const Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
+                     , const Gpio::OSPEEDR ospeedrOption = Gpio::OSPEEDR::LowSpeed;
+                     , const Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption) override
+            {
+                this->EnableClock();
+                this->template ConfigureMODER(Gpio::MODER::Analog);
+                this->template ConfigureOTYPER(otyperOption);
+                this->template ConfigureOSPEEDR(ospeedrOption);
+                this->template ConfigurePUPDR(pupdrOption);
+                ConnectAnalogSwitch(pin);
             }
         };
     }

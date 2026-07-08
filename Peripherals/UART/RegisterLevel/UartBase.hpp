@@ -42,14 +42,57 @@ concept USARTx = requires (T uart)
 	{ uart.RESERVED5 }  -> std::convertible_to<uint16_t&>;				/*!< Reserved, 0x2A                                                 */
 };
 
-template<USARTx Usart, Peripherals::RegisterLevel::GpioPort RxTx, uint32_t baudRate = 115200, std::size_t bufferSize = 80>
+//using Uart2TxPA2 = Peripherals::RegisterLevel::GpioAlternate<2>{GPIOA, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
+//using Uart2RxPA3 = Peripherals::RegisterLevel::GpioAlternate<3>{GPIOA, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
+
+
+using Uart2TxPA2 = Peripherals::RegisterLevel::GpioAlternate<2>;
+using Uart2RxPA3 = Peripherals::RegisterLevel::GpioAlternate<3>;
+using Uart2TxPD5 = Peripherals::RegisterLevel::GpioAlternate<5>;
+using Uart2RxPD6 = Peripherals::RegisterLevel::GpioAlternate<6>;
+
+template<USARTx Usart, typename TxPin, typename RxPin, uint32_t baudRate = 115200, std::size_t bufferSize = 80>
 class Uart
 {
 protected:
 	volatile Usart* const usart = nullptr;
-
+    [[no_unique_address]] TxPin tx = ConfigureTxPin();
+    [[no_unique_address]] RxPin rx = ConfigureRxPin();
 	inline void EnableClock() { RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN; };
 	
+    //TO DO - should it be like that? maybe explicit init functions would be fine or even better
+    constexpr auto ConfigureTxPin()
+    {
+        if constexpr (std::is_same_v<TxPin, Uart2TxPA2>)
+        {
+            return Uart2TxPA2{GPIOA, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
+        }
+        else if constexpr (std::is_same_v<TxPin, Uart2TxPD5>)
+        {
+            return Uart2TxPD5{GPIOD, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
+        }
+        else
+        {
+            static_assert(false, "Unsupported TxPin type");
+        }
+    }
+
+    constexpr auto ConfigureRxPin()
+    {
+        if constexpr (std::is_same_v<RxPin, Uart2RxPA3>)
+        {
+            return Uart2RxPA3{GPIOA, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
+        }
+        else if constexpr (std::is_same_v<RxPin, Uart2RxPD6>)
+        {
+            return Uart2RxPD6{GPIOD, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
+        }
+        else
+        {
+            static_assert(false, "Unsupported RxPin type");
+        }
+    }
+
 	void ConfigureTX()
 	{
 		/*

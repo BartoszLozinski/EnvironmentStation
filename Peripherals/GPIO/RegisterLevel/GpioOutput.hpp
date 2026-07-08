@@ -15,16 +15,6 @@ namespace Peripherals
             using GpioBase<GPIO_TypeDef, pin_>::pin;
 
         private:
-            void ConfigureAsOutput(const Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
-                , const Gpio::OSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
-                , const Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption)
-            {
-                this->template ConfigureMODER(Gpio::MODER::Output);
-                this->template ConfigureOTYPER(otyperOption);
-                this->template ConfigureOSPEEDR(ospeedrOption);
-                this->template ConfigurePUPDR(pupdrOption);
-            }
-
             //Output data register ODR - reference manual 8.5.6
             bool GetState_Impl() const { return port->ODR & PinMask<pin>() ? GpioOutputState::Set : GpioOutputState::Reset; }
             void Set_Impl() { port->BSRR |= (0b1 << pin); }
@@ -41,14 +31,21 @@ namespace Peripherals
             GpioOutput(GpioOutput&& source) = delete;
             GpioOutput& operator=(const GpioOutput& source) = delete;
             GpioOutput& operator=(GpioOutput&& source) = delete;
-            GpioOutput(GPIO_TypeDef* const port_
-                      , const Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
-                      , const Gpio::OSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
-                      , const Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption)
+            GpioOutput(GPIO_TypeDef* const port_)
                 : GpioBase<GPIO_TypeDef, pin_>(port_)
+            {}
+
+            void Init(const Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
+                     , const Gpio::OSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                     , const Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption) override
             {
-                ConfigureAsOutput(otyperOption, ospeedrOption, pupdrOption);
+                this->EnableClock();
+                this->template ConfigureMODER(Gpio::MODER::Output);
+                this->template ConfigureOTYPER(otyperOption);
+                this->template ConfigureOSPEEDR(ospeedrOption);
+                this->template ConfigurePUPDR(pupdrOption);
             }
+
             ~GpioOutput() = default;
         };
     }

@@ -30,22 +30,10 @@ namespace Peripherals
             { port.ASCR } -> std::convertible_to<volatile uint32_t&>;
         };
 
+        //TODO: expose Init methods and move out of the constructors
         template<GpioPort Port, uint8_t pin_>
         class GpioBase
         {
-        private:
-            void EnableClock()
-            {
-                if (port == GPIOA)
-                    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;
-                else if (port == GPIOB)
-                    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOBEN;
-                else if (port == GPIOC)
-                    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOCEN;
-                else if (port == GPIOD)
-                    RCC->AHB2ENR |= RCC_AHB2ENR_GPIODEN;
-            }
-
         protected:
             volatile Port* const port = nullptr;
             static constexpr uint8_t pin = pin_;
@@ -96,13 +84,29 @@ namespace Peripherals
                 port->AFR[LowOrHigh] |= (static_cast<uint32_t>(af) << bitShift);
             }
 
+            void EnableClock()
+            {
+                if (port == GPIOA)
+                    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;
+                else if (port == GPIOB)
+                    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOBEN;
+                else if (port == GPIOC)
+                    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOCEN;
+                else if (port == GPIOD)
+                    RCC->AHB2ENR |= RCC_AHB2ENR_GPIODEN;
+            }
+
         public:
             GpioBase(Port* const port_)
                 : port(port_)
             {
                 static_assert(pin >= 0 && pin < 16, "Invalid pin number: needs to be in range of 0 - 15!");
-                EnableClock();
             }
+
+            virtual ~GpioBase() = default;
+            virtual void Init(const Gpio::OTYPER otyperOption
+                            , const Gpio::OSPEEDR ospeedrOption
+                            , const Gpio::PUPDR pupdrOption) = 0;
         };
 
         struct GpioDefaults

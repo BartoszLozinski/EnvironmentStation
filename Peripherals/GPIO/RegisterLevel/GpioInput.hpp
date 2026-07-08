@@ -19,9 +19,9 @@ namespace Peripherals
                                  , Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption)
             {
                 this->template ConfigureMODER(Gpio::MODER::Input);
-                this->template ConfigureOTYPER(otyperOption);
-                this->template ConfigureOSPEEDR(ospeedrOption);
-                this->template ConfigurePUPDR(pupdrOption);
+                this->template ConfigureOTYPER(GpioDefaults::otyperOption);
+                this->template ConfigureOSPEEDR(GpioDefaults::ospeedrOption);
+                this->template ConfigurePUPDR(GpioDefaults::pupdrOption);
             }
             void ConfigureEXTICR()
             {
@@ -73,13 +73,18 @@ namespace Peripherals
             GpioInput(GpioInput&& source) = delete;
             GpioInput& operator=(const GpioInput& source) = delete;
             GpioInput& operator=(GpioInput&& source) = delete;
-            GpioInput(GPIO_TypeDef* const port_
-                    , Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
-                    , Gpio::OSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
-                    , Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption)
-                : GpioBase<GPIO_TypeDef, pin_>(port_)
+            GpioInput(GPIO_TypeDef* const port_)
+                : GpioBase<GPIO_TypeDef, pin_>(port_){}
+
+            void Init(const Gpio::OTYPER otyperOption = GpioDefaults::otyperOption
+                     , const Gpio::OSPEEDR ospeedrOption = GpioDefaults::ospeedrOption
+                     , const Gpio::PUPDR pupdrOption = GpioDefaults::pupdrOption) override
             {
-                ConfigureAsInput(otyperOption, ospeedrOption, pupdrOption);
+                this->EnableClock();
+                this->template ConfigureMODER(Gpio::MODER::Input);
+                this->template ConfigureOTYPER(GpioDefaults::otyperOption);
+                this->template ConfigureOSPEEDR(GpioDefaults::ospeedrOption);
+                this->template ConfigurePUPDR(GpioDefaults::pupdrOption);
             }
 
             //RM External iterrupt/event (EXTI) GPIO Mapping (multiplexer)

@@ -51,6 +51,8 @@ int main()
     i2c1.SetTimeout(100);
     Device::LPS25HB lps25hb{ i2c1 };
 
+    ld2.Init();
+
     // LPS25HB test
 
     static constexpr char testMsg[] = "LPS25HB test:\r\n";
