@@ -16,6 +16,7 @@
 // try once more
 
 #include "../../Config.hpp"
+#include <stm32l476xx.h>
 #include <array>
 #include <concepts>
 
@@ -42,97 +43,30 @@ concept USARTx = requires (T uart)
 	{ uart.RESERVED5 }  -> std::convertible_to<uint16_t&>;				/*!< Reserved, 0x2A                                                 */
 };
 
-//using Uart2TxPA2 = Peripherals::RegisterLevel::GpioAlternate<2>{GPIOA, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
-//using Uart2RxPA3 = Peripherals::RegisterLevel::GpioAlternate<3>{GPIOA, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
 
-
-using Uart2TxPA2 = Peripherals::RegisterLevel::GpioAlternate<2>;
-using Uart2RxPA3 = Peripherals::RegisterLevel::GpioAlternate<3>;
-using Uart2TxPD5 = Peripherals::RegisterLevel::GpioAlternate<5>;
-using Uart2RxPD6 = Peripherals::RegisterLevel::GpioAlternate<6>;
-
-template<USARTx Usart, typename TxPin, typename RxPin, uint32_t baudRate = 115200, std::size_t bufferSize = 80>
+/*Rx and Tx pins needs to be configured/initialized before Uart*/
+template<USARTx Usart, std::size_t bufferSize = 80>
 class Uart
 {
 protected:
 	volatile Usart* const usart = nullptr;
-    [[no_unique_address]] TxPin tx = ConfigureTxPin();
-    [[no_unique_address]] RxPin rx = ConfigureRxPin();
-	inline void EnableClock() { RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN; };
+
+	void EnableClock()
+    {
+        //UART2 clock enable
+        if (usart == USART1)
+            RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+        else if (usart == USART2)
+            RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN;
+    }
 	
-    //TO DO - should it be like that? maybe explicit init functions would be fine or even better
-    constexpr auto ConfigureTxPin()
-    {
-        if constexpr (std::is_same_v<TxPin, Uart2TxPA2>)
-        {
-            return Uart2TxPA2{GPIOA, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
-        }
-        else if constexpr (std::is_same_v<TxPin, Uart2TxPD5>)
-        {
-            return Uart2TxPD5{GPIOD, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
-        }
-        else
-        {
-            static_assert(false, "Unsupported TxPin type");
-        }
-    }
-
-    constexpr auto ConfigureRxPin()
-    {
-        if constexpr (std::is_same_v<RxPin, Uart2RxPA3>)
-        {
-            return Uart2RxPA3{GPIOA, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
-        }
-        else if constexpr (std::is_same_v<RxPin, Uart2RxPD6>)
-        {
-            return Uart2RxPD6{GPIOD, Peripherals::RegisterLevel::Gpio::AlternateFunction::AF7};
-        }
-        else
-        {
-            static_assert(false, "Unsupported RxPin type");
-        }
-    }
-
-	void ConfigureTX()
-	{
-		/*
-		temp object, UB =/
-		if (usart == USART2)
-		{
-			tx = GpioAlternate<GPIO_TypeDef, 3, AlternateFunction::AF7>(GPIOA);
-		}*/
-
-		//TX PA2
-		GPIOA->MODER &= ~GPIO_MODER_MODE2_0;//11 after reset -- analog = 0b10;
-		//AF7 needs to be 0111 ___ AFR[0] low register [1] high
-		GPIOA->AFR[0] |= GPIO_AFRL_AFSEL2_0;//datasheet alternate function AF7
-		GPIOA->AFR[0] |= GPIO_AFRL_AFSEL2_1;
-		GPIOA->AFR[0] |= GPIO_AFRL_AFSEL2_2;
-		//OTYPER = 0b0 - push-pull for reset state
-		//GPIOA->OSPEEDR = 0b00 - very low speed by reset state
-	}
-
-	void ConfigureRX()
-	{
-		//RX PA3
-		GPIOA->MODER &= ~GPIO_MODER_MODE3_0;
-		GPIOA->AFR[0] |= GPIO_AFRL_AFSEL3_0;
-		GPIOA->AFR[0] |= GPIO_AFRL_AFSEL3_1;
-		GPIOA->AFR[0] |= GPIO_AFRL_AFSEL3_2;
-		GPIOA->OTYPER |= GPIO_OTYPER_OT3; //why should it be open-drain
-		//GPIOA->OSPEEDR = 0b00 - very low speed by reset state
-	}
-		//TO BE REFACTORED FOR UART1 also!!!
-
-
+    // TODO configure also for other uarts (especially uart1 for this project)
+    // Check in RM uart1 clocks and BRR configurations, same with other peripehrals
+    //probably something like in stm32l4xx_hal_rcc.c:
+    // HAL_RCC_GetPCLK1Freq(void) and HAL_RCC_GetPCLK2Freq(void) functions
+    template<uint32_t baudRate = 115200>
 	void UartConfig()
 	{
-		ConfigureTX();
-		ConfigureRX();
-		//UART2 clock enable
-		if (usart == USART2)
-			RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN;
-
 		//USART Baud Rate Register BRR - speed of the USART1
 		//UARTDIV (RM 40.8 USART baud rate register) = 80 000 000 / 115200 = 34,7
 		//USART2 uses PCLK1 clock by default (reset state 00)
@@ -146,7 +80,8 @@ protected:
 		usart->CR1 |= USART_CR1_UE; // UART enabled
 		usart->CR1 |= USART_CR1_TE; //transmitter enabled - 0 disable, 1- enabled
 		usart->CR1 |= USART_CR1_RE; //receiver enabled - 0 disable, 1- enabled
-	};
+	}
+
 	volatile bool messageReady_ = false;
 	std::array<char, bufferSize>::iterator index_;
 
@@ -156,12 +91,17 @@ public:
 	Uart(Uart&& source) = delete;
 	Uart& operator=(const Uart& source) = delete;
 	Uart& operator=(Uart&& source) = delete;
-	Uart(Usart* const usart_) 
-		: usart(usart_)
-	{
-		EnableClock();
-		UartConfig();
-	};
+	Uart(Usart* const usart_) : usart(usart_) {};
+
+    /*Get appropriate Tx and Rx pins from datasheet*/
+    template<Peripherals::RegisterLevel::GpioPort TxPin, Peripherals::RegisterLevel::GpioPort RxPin>
+    void Init(TxPin& txPin, RxPin& rxPin)
+    {
+        txPin.Init();
+        rxPin.Init();
+        EnableClock();
+        UartConfig();
+    }
 
 	void ConfigureExtiReceive()
 	{

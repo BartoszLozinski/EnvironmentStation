@@ -6,7 +6,7 @@ set(target_name UART_RegisterLevel)
 set(${target_name}_hpp  ../IUart.hpp
                         ../LineParser.hpp
                         ../Utils/RingBuffer.hpp
-                        uartBase.hpp
+                        UartBase.hpp
                         #UartLegacy.hpp
                         ../../Config.hpp
 )

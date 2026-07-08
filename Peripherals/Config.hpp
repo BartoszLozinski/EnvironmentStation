@@ -7,20 +7,13 @@
 
 #pragma once
 
-#ifdef UNIT_TESTS
-#include "../UnitTests/Fake_stm32l476xx.h"
-#include "../UnitTests/Fake_stm32l4xx.h"
-#else
 #include <stm32l4xx.h>
 #include "stm32l476xx.h"
-#endif
 
 #include <array>
 #include <cstdint>
 #include <atomic>
 
-#ifndef CONFIG_HPP_
-#define CONFIG_HPP_
 
 enum class ERROR_CODE
 {
@@ -109,5 +102,3 @@ constexpr uint32_t PinMask()
 	static_assert(pin >= 0 && pin < 16, "Pin mask should use pin value in range of 0 - 15!");
 	return 1u << pin;
 }
-
-#endif /* CONFIG_HPP_ */
