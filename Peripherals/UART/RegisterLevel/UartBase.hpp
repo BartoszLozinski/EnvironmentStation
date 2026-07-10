@@ -43,76 +43,81 @@ concept USARTx = requires (T uart)
 	{ uart.RESERVED5 }  -> std::convertible_to<uint16_t&>;				/*!< Reserved, 0x2A                                                 */
 };
 
-
-/*Rx and Tx pins needs to be configured/initialized before Uart*/
-template<USARTx Usart, std::size_t bufferSize = 64>
-class UartBase
+namespace Peripherals
 {
-protected:
-	volatile Usart* const usart = nullptr;
-
-	void EnableClock()
+    namespace RegisterLevel
     {
-        //UART2 clock enable
-        if (usart == USART1)
-            RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
-        else if (usart == USART2)
-            RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN;
+        /*Rx and Tx pins needs to be configured/initialized before Uart*/
+        template<USARTx Usart, std::size_t bufferSize = 64>
+        class UartBase
+        {
+        protected:
+            volatile Usart* const usart = nullptr;
+
+            void EnableClock()
+            {
+                //UART2 clock enable
+                if (usart == USART1)
+                    RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+                else if (usart == USART2)
+                    RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN;
+            }
+            
+            // TODO configure also for other uarts (especially uart1 for this project)
+            // Check in RM uart1 clocks and BRR configurations, same with other peripehrals
+            //probably something like in stm32l4xx_hal_rcc.c:
+            // HAL_RCC_GetPCLK1Freq(void) and HAL_RCC_GetPCLK2Freq(void) functions
+            void UartConfig(const uint32_t baudRate)
+            {
+                //USART Baud Rate Register BRR - speed of the USART1
+                //UARTDIV (RM 40.8 USART baud rate register) = 80 000 000 / 115200 = 34,7
+                //USART2 uses PCLK1 clock by default (reset state 00)
+                //know from USART2SEL bits value
+                usart->BRR = SystemCoreClock / baudRate; /// system_stm32l4xx.c file
+
+                //frame 8m1 -- 0b00 - for USART_CR1 (reset value)
+                //PCE parity control enable: 0 - disabled (reset value), 1 - enabled
+                //USART_CR2 STOP register - 00 - 1 stop bit; (RM USART_CR2) reset value
+                //USART_CR1 UE (UART enable bit) - 0 -disabled (reset value): 1 - enabled
+                usart->CR1 |= USART_CR1_UE; // UART enabled
+                usart->CR1 |= USART_CR1_TE; //transmitter enabled - 0 disable, 1- enabled
+                usart->CR1 |= USART_CR1_RE; //receiver enabled - 0 disable, 1- enabled
+            }
+
+            volatile bool messageReady_ = false;
+            std::array<char, bufferSize>::iterator index_;
+
+
+        public:
+            UartBase(const UartBase& source) = delete;
+            UartBase(UartBase&& source) = delete;
+            UartBase& operator=(const UartBase& source) = delete;
+            UartBase& operator=(UartBase&& source) = delete;
+            UartBase(Usart* const usart_) : usart(usart_) {};
+
+            /*Get appropriate Tx and Rx pins from datasheet*/
+            template<Peripherals::RegisterLevel::GpioPort TxPin, Peripherals::RegisterLevel::GpioPort RxPin>
+            void Init(TxPin& txPin, RxPin& rxPin, const uint32_t baudRate = 115200)
+            {
+                txPin.Init();
+                rxPin.Init();
+                EnableClock();
+                UartConfig(baudRate);
+            }
+
+            //TODO make more generic - usable also for other uarts
+            void ConfigureExtiReceive()
+            {
+                RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; //enable SYSCFG clock
+                //9.2.6 System configuration controller SYSCFG
+                SYSCFG->EXTICR[0] &= ~SYSCFG_EXTICR1_EXTI3; //0000
+                SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI3_PA; //set bit for PA3 exti route to syscfg
+
+                usart->CR1 |= USART_CR1_RXNEIE; //Enable RX interrupt
+                NVIC_SetPriority(USART2_IRQn, 1); //set priority (for exti ,  priotity = 1
+                NVIC_EnableIRQ(USART2_IRQn);//enable interrupt
+                //enum from stm32l476xx.h (CMSIS file) - Interrupt number definition
+            };
+        };
     }
-	
-    // TODO configure also for other uarts (especially uart1 for this project)
-    // Check in RM uart1 clocks and BRR configurations, same with other peripehrals
-    //probably something like in stm32l4xx_hal_rcc.c:
-    // HAL_RCC_GetPCLK1Freq(void) and HAL_RCC_GetPCLK2Freq(void) functions
-	void UartConfig(const uint32_t baudRate)
-	{
-		//USART Baud Rate Register BRR - speed of the USART1
-		//UARTDIV (RM 40.8 USART baud rate register) = 80 000 000 / 115200 = 34,7
-		//USART2 uses PCLK1 clock by default (reset state 00)
-		//know from USART2SEL bits value
-		usart->BRR = SystemCoreClock / baudRate; /// system_stm32l4xx.c file
-
-		//frame 8m1 -- 0b00 - for USART_CR1 (reset value)
-		//PCE parity control enable: 0 - disabled (reset value), 1 - enabled
-		//USART_CR2 STOP register - 00 - 1 stop bit; (RM USART_CR2) reset value
-		//USART_CR1 UE (UART enable bit) - 0 -disabled (reset value): 1 - enabled
-		usart->CR1 |= USART_CR1_UE; // UART enabled
-		usart->CR1 |= USART_CR1_TE; //transmitter enabled - 0 disable, 1- enabled
-		usart->CR1 |= USART_CR1_RE; //receiver enabled - 0 disable, 1- enabled
-	}
-
-	volatile bool messageReady_ = false;
-	std::array<char, bufferSize>::iterator index_;
-
-
-public:
-	UartBase(const UartBase& source) = delete;
-	UartBase(UartBase&& source) = delete;
-	UartBase& operator=(const UartBase& source) = delete;
-	UartBase& operator=(UartBase&& source) = delete;
-	UartBase(Usart* const usart_) : usart(usart_) {};
-
-    /*Get appropriate Tx and Rx pins from datasheet*/
-    template<Peripherals::RegisterLevel::GpioPort TxPin, Peripherals::RegisterLevel::GpioPort RxPin>
-    void Init(TxPin& txPin, RxPin& rxPin, const uint32_t baudRate = 115200)
-    {
-        txPin.Init();
-        rxPin.Init();
-        EnableClock();
-        UartConfig(baudRate);
-    }
-
-    //TODO make more generic - usable also for other uarts
-	void ConfigureExtiReceive()
-	{
-		RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; //enable SYSCFG clock
-		//9.2.6 System configuration controller SYSCFG
-		SYSCFG->EXTICR[0] &= ~SYSCFG_EXTICR1_EXTI3; //0000
-		SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI3_PA; //set bit for PA3 exti route to syscfg
-
-		usart->CR1 |= USART_CR1_RXNEIE; //Enable RX interrupt
-		NVIC_SetPriority(USART2_IRQn, 1); //set priority (for exti ,  priotity = 1
-		NVIC_EnableIRQ(USART2_IRQn);//enable interrupt
-		//enum from stm32l476xx.h (CMSIS file) - Interrupt number definition
-	};
-};
+}

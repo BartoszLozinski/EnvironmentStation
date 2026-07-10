@@ -12,7 +12,7 @@
 #include "../../Peripherals/UART/LineParser.hpp"
 
 #include "../../Peripherals/GPIO/RegisterLevel/GpioOutput.hpp"
-#include "../../Peripherals/UART/RegisterLevel/UartBase.hpp"
+#include "../../Peripherals/UART/RegisterLevel/Uart.hpp"
 
 
 
