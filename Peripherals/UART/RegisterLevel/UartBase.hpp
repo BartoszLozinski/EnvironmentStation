@@ -86,8 +86,8 @@ protected:
 
 
 public:
-	UartBase(const Uart& source) = delete;
-	UartBase(Uart&& source) = delete;
+	UartBase(const UartBase& source) = delete;
+	UartBase(UartBase&& source) = delete;
 	UartBase& operator=(const UartBase& source) = delete;
 	UartBase& operator=(UartBase&& source) = delete;
 	UartBase(Usart* const usart_) : usart(usart_) {};
