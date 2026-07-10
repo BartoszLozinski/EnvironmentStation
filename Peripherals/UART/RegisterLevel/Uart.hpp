@@ -33,12 +33,12 @@ protected:
 
     void EnableRxInterrupt()
     {
-        usart->CR1 |= USART_CR1_RXNEIE; //Enable RX interrupt
+        this->usart->CR1 |= USART_CR1_RXNEIE; //Enable RX interrupt
     };
 
     void EnableTxInterrupt()
     {
-        usart->CR1 |= USART_CR1_TXEIE; // Enable TX interrupt
+        this->usart->CR1 |= USART_CR1_TXEIE; // Enable TX interrupt
     }
 
 public:
@@ -52,7 +52,7 @@ public:
     template<Peripherals::RegisterLevel::GpioPort TxPin, Peripherals::RegisterLevel::GpioPort RxPin>
     void Init(TxPin& txPin, RxPin& rxPin, const uint32_t baudRate = 115200)
     {
-        this->template Init(txPin, rxPin, baudRate);
+        this->UartBase<Usart, bufferSize>::Init(txPin, rxPin, baudRate);
         EnableRxInterrupt();
     }
 
@@ -83,24 +83,26 @@ public:
         if (const auto byte = txBuffer.Pop())
         {
             txBusy = true;
-            usart->TDR = byte.value();
+            this->usart->TDR = byte.value();
             EnableTxInterrupt();
         }
     }
 
-    HandleTxInterrupt()
+    void HandleTxInterrupt()
     {
-        if ((usart->ISR & USART_ISR_TXE) && (usart->CR1 & USART_CR1_TXEIE))
+        // ISR_TXEIE - transmit register empty
+        // TCIE - transmission comlpete
+        if ((this->usart->ISR & USART_ISR_TXE) && (this->usart->CR1 & USART_CR1_TXEIE))
         {
             auto byte = txBuffer.Pop();
 
             if (byte)
             {
-                usart->TDR = *byte;
+                this->usart->TDR = *byte;
             }
             else
             {
-                usart->CR1 &= ~USART_CR1_TXEIE;
+                this->usart->CR1 &= ~USART_CR1_TXEIE;
                 txBusy = false;
             }
         }
@@ -108,9 +110,9 @@ public:
 
     void HandleRxInterrupt()
     {
-        if (usart->ISR & USART_ISR_RXNE)
+        if (this->usart->ISR & USART_ISR_RXNE)
         {
-            const auto byte = static_cast<uint8_t>(usart->RDR);
+            const auto byte = static_cast<uint8_t>(this->usart->RDR);
         
             if (!rxBuffer.Push(byte))
                 ++overflowCount;
