@@ -1,0 +1,127 @@
+#pragma once
+//TO connect with you linux terminal (for example at ubuntu)
+//
+// check tty com ports with
+// dmesg | grep tty 		(or sudo if not allow due to reading the kernel buffer failed: Operation not permitted)
+// screen /dev/tty*ACMx* [baud rate] (i.e. screen /dev/ttyACM1 115200
+//
+// to kill screen process: ctrl + A --> K to kill process
+// to detach session:      ctrl + A --> D
+// available sockets:      screen -ls
+// reconnect:              screen -r [ID]
+//
+// if you cannot reconnect, try: lsof /dev/ttyACM1
+// kill [PID]
+//
+// try once more
+
+#include <optional>
+
+#include "UartBase.hpp"
+#include "../Utils/RingBuffer.hpp"
+
+template<USARTx Usart, std::size_t bufferSize = 64>
+class Uart : public UartBase<Usart, bufferSize>
+{
+protected:
+	UartRingBuffer<BufferSize> rxBuffer{};
+    UartRingBuffer<BufferSize> txBuffer{};
+
+    uint32_t overflowCount = 0;
+    volatile bool txBusy{ false };
+
+
+    void EnableRxInterrupt()
+    {
+        usart->CR1 |= USART_CR1_RXNEIE; //Enable RX interrupt
+    };
+
+    void EnableTxInterrupt()
+    {
+        usart->CR1 |= USART_CR1_TXEIE; // Enable TX interrupt
+    }
+
+public:
+	Uart(const Uart& source) = delete;
+	Uart(Uart&& source) = delete;
+	Uart& operator=(const Uart& source) = delete;
+	Uart& operator=(Uart&& source) = delete;
+	Uart(Usart* const usart_) : UartBase(usart_) {};
+
+    /*Get appropriate Tx and Rx pins from datasheet*/
+    template<Peripherals::RegisterLevel::GpioPort TxPin, Peripherals::RegisterLevel::GpioPort RxPin>
+    void Init(TxPin& txPin, RxPin& rxPin, const uint32_t baudRate = 115200)
+    {
+        this->template Init(txPin, rxPin, baudRate);
+        EnableRxInterrupt();
+    }
+
+    std::optional<uint8_t> Read()
+    {
+        return rxBuffer.Pop();
+    }
+
+    void Transmit(const uint8_t* data, std::size_t size)
+    {
+        for (std::size_t i = 0; i < size; ++i)
+        {
+            if (!txBuffer.Push(data[i]))
+            {
+                ++overflowCount; // or handle drop differently
+                break;
+            }
+        }
+
+        ProcessTx();
+    }
+
+    void ProcessTx()
+    {
+        if (txBusy)
+            return;
+
+        if (const auto byte = txBuffer.Pop())
+        {
+            txBusy = true;
+            usart->TDR = byte.value();
+            EnableTxInterrupt();
+        }
+    }
+
+    HandleTxInterrupt()
+    {
+        if ((usart->ISR & USART_ISR_TXE) && (usart->CR1 & USART_CR1_TXEIE))
+        {
+            auto byte = txBuffer.Pop();
+
+            if (byte)
+            {
+                usart->TDR = *byte;
+            }
+            else
+            {
+                usart->CR1 &= ~USART_CR1_TXEIE;
+                txBusy = false;
+            }
+        }
+    }
+
+    void HandleRxInterrupt()
+    {
+        if (usart->ISR & USART_ISR_RXNE)
+        {
+            const auto byte = static_cast<uint8_t>(usart->RDR);
+        
+            if (!rxBuffer.Push(byte))
+                ++overflowCount;
+        }
+    }
+
+    void IRQHandler()
+    {
+        HandleRxInterrupt();        
+        HandleTxInterrupt();
+    
+    }
+
+};

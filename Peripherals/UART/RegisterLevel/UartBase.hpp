@@ -45,8 +45,8 @@ concept USARTx = requires (T uart)
 
 
 /*Rx and Tx pins needs to be configured/initialized before Uart*/
-template<USARTx Usart, std::size_t bufferSize = 80>
-class Uart
+template<USARTx Usart, std::size_t bufferSize = 64>
+class UartBase
 {
 protected:
 	volatile Usart* const usart = nullptr;
@@ -64,8 +64,7 @@ protected:
     // Check in RM uart1 clocks and BRR configurations, same with other peripehrals
     //probably something like in stm32l4xx_hal_rcc.c:
     // HAL_RCC_GetPCLK1Freq(void) and HAL_RCC_GetPCLK2Freq(void) functions
-    template<uint32_t baudRate = 115200>
-	void UartConfig()
+	void UartConfig(const uint32_t baudRate)
 	{
 		//USART Baud Rate Register BRR - speed of the USART1
 		//UARTDIV (RM 40.8 USART baud rate register) = 80 000 000 / 115200 = 34,7
@@ -87,22 +86,23 @@ protected:
 
 
 public:
-	Uart(const Uart& source) = delete;
-	Uart(Uart&& source) = delete;
-	Uart& operator=(const Uart& source) = delete;
-	Uart& operator=(Uart&& source) = delete;
-	Uart(Usart* const usart_) : usart(usart_) {};
+	UartBase(const Uart& source) = delete;
+	UartBase(Uart&& source) = delete;
+	UartBase& operator=(const UartBase& source) = delete;
+	UartBase& operator=(UartBase&& source) = delete;
+	UartBase(Usart* const usart_) : usart(usart_) {};
 
     /*Get appropriate Tx and Rx pins from datasheet*/
     template<Peripherals::RegisterLevel::GpioPort TxPin, Peripherals::RegisterLevel::GpioPort RxPin>
-    void Init(TxPin& txPin, RxPin& rxPin)
+    void Init(TxPin& txPin, RxPin& rxPin, const uint32_t baudRate = 115200)
     {
         txPin.Init();
         rxPin.Init();
         EnableClock();
-        UartConfig();
+        UartConfig(baudRate);
     }
 
+    //TODO make more generic - usable also for other uarts
 	void ConfigureExtiReceive()
 	{
 		RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; //enable SYSCFG clock

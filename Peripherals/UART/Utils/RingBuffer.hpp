@@ -12,6 +12,7 @@ private:
     volatile std::size_t head{ 0 };
     volatile std::size_t tail{ 0 };
     static constexpr std::size_t Next(std::size_t index) { return (index + 1 == BufferSize) ? 0 : index + 1; }
+    
 public:
     static_assert(BufferSize > 1, "Buffer size must be greater than 1.");
     [[nodiscard]] bool IsEmpty() const { return head == tail; }

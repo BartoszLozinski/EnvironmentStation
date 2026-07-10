@@ -1,12 +1,10 @@
 set(target_name UART_RegisterLevel)
 
-#set(${target_name}_src)
-
-
 set(${target_name}_hpp  ../IUart.hpp
                         ../LineParser.hpp
                         ../Utils/RingBuffer.hpp
                         UartBase.hpp
+                        Uart.hpp
                         #UartLegacy.hpp
                         ../../Config.hpp
 )
