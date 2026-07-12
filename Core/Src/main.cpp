@@ -89,6 +89,8 @@ int main()
         //uart2.ProcessRx();
         btHC06Uart.ProcessRx();
         
+        
+        //TODO: fix bthc06 reciever
         if (const auto lineOpt = btLineParser.ReadLine())
         {
             const auto line = *lineOpt;
