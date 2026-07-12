@@ -100,11 +100,11 @@ namespace Peripherals
                 // TCIE - transmission comlpete
                 if ((this->usart->ISR & USART_ISR_TXE) && (this->usart->CR1 & USART_CR1_TXEIE))
                 {
-                    auto byte = txBuffer.Pop();
+                    const auto byte = txBuffer.Pop();
 
                     if (byte)
                     {
-                        this->usart->TDR = *byte;
+                        this->usart->TDR = byte.value();
                     }
                     else
                     {
@@ -129,7 +129,6 @@ namespace Peripherals
             {
                 HandleRxInterrupt();        
                 HandleTxInterrupt();
-            
             }
         };
     }
