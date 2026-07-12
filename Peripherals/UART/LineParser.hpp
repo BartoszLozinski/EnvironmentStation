@@ -5,7 +5,7 @@
 #include <span>
 
 template<typename T>
-concept UartConcept = requires(T uart)
+concept UartConcept = requires(T& uart)
 {
     { uart.Read() } -> std::same_as<std::optional<uint8_t>>;
 };

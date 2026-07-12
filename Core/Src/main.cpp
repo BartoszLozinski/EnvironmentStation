@@ -48,6 +48,7 @@ int main()
 
     // LPS25HB test
 
+    uart2.ConfigureInterruptsPriority(IRQn_Type::USART2_IRQn, 1);
     uart2.Init(uart2Tx, uart2Rx, 115200);
     ld2.Init();
 

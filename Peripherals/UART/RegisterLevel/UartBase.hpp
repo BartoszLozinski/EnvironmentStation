@@ -52,7 +52,6 @@ namespace Peripherals
 
             void EnableClock()
             {
-                //UART2 clock enable
                 if (usart == USART1)
                     RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
                 else if (usart == USART2)
@@ -61,11 +60,11 @@ namespace Peripherals
             
             // TODO configure also for other uarts (especially uart1 for this project)
             // Check in RM uart1 clocks and BRR configurations, same with other peripehrals
-            //probably something like in stm32l4xx_hal_rcc.c:
+            // probably something like in stm32l4xx_hal_rcc.c:
             // HAL_RCC_GetPCLK1Freq(void) and HAL_RCC_GetPCLK2Freq(void) functions
             void UartConfig(const uint32_t baudRate)
             {
-                //USART Baud Rate Register BRR - speed of the USART1
+                //USART Baud Rate Register BRR - speed of the USART
                 //UARTDIV (RM 40.8 USART baud rate register) = 80 000 000 / 115200 = 34,7
                 //USART2 uses PCLK1 clock by default (reset state 00)
                 //know from USART2SEL bits value
@@ -99,20 +98,12 @@ namespace Peripherals
                 rxPin.Init();
                 EnableClock();
                 UartConfig(baudRate);
-                ConfigureExtiReceive();
             }
 
-            //TODO make more generic - usable also for other uarts
-            void ConfigureExtiReceive()
+            void ConfigureInterruptsPriority(const IRQn_Type selectedExti, const uint8_t priority)
             {
-                RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; //enable SYSCFG clock
-                //9.2.6 System configuration controller SYSCFG
-                SYSCFG->EXTICR[0] &= ~SYSCFG_EXTICR1_EXTI3; //0000
-                SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI3_PA; //set bit for PA3 exti route to syscfg
-
-                usart->CR1 |= USART_CR1_RXNEIE; //Enable RX interrupt
-                NVIC_SetPriority(USART2_IRQn, 1); //set priority (for exti ,  priotity = 1
-                NVIC_EnableIRQ(USART2_IRQn);//enable interrupt
+                NVIC_SetPriority(selectedExti, priority); //set priority (for exti ,  priotity = 1
+                NVIC_EnableIRQ(selectedExti);//enable interrupt
                 //enum from stm32l476xx.h (CMSIS file) - Interrupt number definition
             };
         };
