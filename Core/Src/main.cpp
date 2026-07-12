@@ -10,21 +10,15 @@
 #include "../../Peripherals/I2C/HAL/I2C_IT.hpp"
 #include "../../Peripherals/UART/HAL/UartIT.hpp"
 #include "../../Peripherals/UART/LineParser.hpp"
-
-#include "../../Peripherals/GPIO/RegisterLevel/GpioOutput.hpp"
-#include "../../Peripherals/UART/RegisterLevel/Uart.hpp"
-
-
-
 #include "../../Devices/LPS25HB.hpp"
 #include "../../Devices/LPS25HB_Async.hpp"
 
+#include "../Inc/peripheralsDefinition.h"
 
 Peripherals::HAL::UartIT btHC06Uart{ huart1 }; //PA9 (TX), PA10 (RX)
-Peripherals::HAL::UartIT uart2{ huart2 };
+//Peripherals::HAL::UartIT uart2{ huart2 };
 Peripherals::HAL::I2C_IT i2c1IT{ hi2c1 };
 Device::LPS25HB_Async lps25hbAsync{ i2c1IT };
-Peripherals::RegisterLevel::GpioOutput<5> ld2(GPIOA);
 
 int main()
 {
@@ -34,42 +28,45 @@ int main()
     SystemClock_Config();
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
-    MX_USART2_UART_Init();
+    //MX_USART2_UART_Init();
     MX_USART1_UART_Init();
     MX_I2C1_Init();
     
-    HAL::SoftwareTimer ld2Timer{ 500 };
     HAL::SoftwareTimer uartResetTimer{ 2000 };
     HAL::SoftwareTimer uart2PollTimer{ 1 };
     HAL::SoftwareTimer btUartResetTimer{ 2000 };
     HAL::SoftwareTimer btUartPollTimer{ 1 };
     HAL::SoftwareTimer temperatureReadingTimer{ 500 };
     HAL::SoftwareTimer pressureReadingTimer{ 500 };
+    HAL::SoftwareTimer ld2Timer{ 500 };
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
     Peripherals::HAL::I2C i2c1{ hi2c1 };
     i2c1.SetTimeout(100);
     Device::LPS25HB lps25hb{ i2c1 };
 
-    ld2.Init();
 
     // LPS25HB test
+
+    uart2.Init(uart2Tx, uart2Rx, 115200);
+    ld2.Init();
 
     static constexpr char testMsg[] = "LPS25HB test:\r\n";
     uart2.Transmit(reinterpret_cast<const uint8_t*>(testMsg), strlen(testMsg));
     
+    //TO DO - change into state machine, instead of waking up  in blocking loop
+    while(!lps25hbAsync.IsAwake())
+        lps25hbAsync.WakeUp();
+    
+    lps25hb.SetMeasurementFrequency(Device::LPS25HB::MeasurementFrequency::Hz25);
+    HAL_Delay(100); //TODO - get rid to blocking delay
+
     const auto whoAmI = lps25hb.ReadWhoAmI();
 
     if (whoAmI.has_value() && whoAmI.value() == 0xBD)
     {
         static constexpr char successMsg[] = "LPS25HB Found!\r\n";
         uart2.Transmit(reinterpret_cast<const uint8_t*>(successMsg), strlen(successMsg));
-        //TO DO - change into state machine, instead of waking up  in blocking loop
-        while(!lps25hbAsync.IsAwake())
-            lps25hbAsync.WakeUp();
-
-        lps25hb.SetMeasurementFrequency(Device::LPS25HB::MeasurementFrequency::Hz25);
-        HAL_Delay(100); //TODO - get rid to blocking delay
     }
     else
     {
@@ -88,7 +85,7 @@ int main()
 
         uart2.ProcessTx();
         btHC06Uart.ProcessTx();
-        uart2.ProcessRx();
+        //uart2.ProcessRx();
         btHC06Uart.ProcessRx();
         
         if (const auto lineOpt = btLineParser.ReadLine())
@@ -162,10 +159,12 @@ extern "C" void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         btHC06Uart.RxCpltCallback();
     }
 
+    /*
     if (huart->Instance == USART2)
     {
         uart2.RxCpltCallback();
     }
+    */
 }
 
 extern "C" void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
@@ -175,10 +174,12 @@ extern "C" void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
         btHC06Uart.TxCpltCallback();
     }
 
+    /*
     if (huart->Instance == USART2)
     {
         uart2.TxCpltCallback();
     }
+    */
 }
 
 extern "C" void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
@@ -212,3 +213,9 @@ extern "C" void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
         // Optionally inspect hi2c->ErrorCode here for future debug.
     }
 }
+
+extern "C" void USART2_IRQHandler(void)
+{
+    uart2.IRQHandler();
+}
+

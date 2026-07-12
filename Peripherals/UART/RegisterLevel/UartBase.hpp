@@ -30,17 +30,13 @@ concept USARTx = requires (T uart)
     { uart.CR2 } 		-> std::convertible_to<volatile uint32_t&>;		/*!< USART Control register 2,                 Address offset: 0x04 */
     { uart.CR3 } 		-> std::convertible_to<volatile uint32_t&>;		/*!< USART Control register 3,                 Address offset: 0x08 */
     { uart.BRR } 		-> std::convertible_to<volatile uint32_t&>;		/*!< USART Baud rate register,                 Address offset: 0x0C */
-    { uart.GTPR}  		-> std::convertible_to<volatile uint16_t&>;		/*!< USART Guard time and prescaler register,  Address offset: 0x10 */
-    { uart.RESERVED2} 	-> std::convertible_to<uint16_t&>;     			/*!< Reserved, 0x12                                                 */
+    { uart.GTPR}  		-> std::convertible_to<volatile uint32_t&>;		/*!< USART Guard time and prescaler register,  Address offset: 0x10 */
     { uart.RTOR } 		-> std::convertible_to<volatile uint32_t&>;     /*!< USART Receiver Time Out register,         Address offset: 0x14 */
-	{ uart.RQR} 		-> std::convertible_to<volatile uint16_t&>;     /*!< USART Request register,                   Address offset: 0x18 */
-    { uart.RESERVED3 } 	-> std::convertible_to<uint16_t&>;       		/*!< Reserved, 0x1A                                                 */
+	{ uart.RQR} 		-> std::convertible_to<volatile uint32_t&>;     /*!< USART Request register,                   Address offset: 0x18 */
 	{ uart.ISR} 		-> std::convertible_to<volatile uint32_t&>;     /*!< USART Interrupt and status register,      Address offset: 0x1C */
 	{ uart.ICR } 		-> std::convertible_to<volatile uint32_t&>;     /*!< USART Interrupt flag Clear register,      Address offset: 0x20 */
-	{ uart.RDR }        -> std::convertible_to<volatile uint16_t&>;		/*!< USART Receive Data register,              Address offset: 0x24 */
-	{ uart.RESERVED4 }  -> std::convertible_to<uint16_t&>;				/*!< Reserved, 0x26                                                 */
-	{ uart.TDR }        -> std::convertible_to<volatile uint16_t&>;		/*!< USART Transmit Data register,             Address offset: 0x28 */
-	{ uart.RESERVED5 }  -> std::convertible_to<uint16_t&>;				/*!< Reserved, 0x2A                                                 */
+	{ uart.RDR }        -> std::convertible_to<volatile uint32_t&>;		/*!< USART Receive Data register,              Address offset: 0x24 */
+	{ uart.TDR }        -> std::convertible_to<volatile uint32_t&>;		/*!< USART Transmit Data register,             Address offset: 0x28 */
 };
 
 namespace Peripherals
@@ -96,13 +92,14 @@ namespace Peripherals
             UartBase(Usart* const usart_) : usart(usart_) {};
 
             /*Get appropriate Tx and Rx pins from datasheet*/
-            template<Peripherals::RegisterLevel::GpioPort TxPin, Peripherals::RegisterLevel::GpioPort RxPin>
+            template<typename TxPin, typename RxPin>
             void Init(TxPin& txPin, RxPin& rxPin, const uint32_t baudRate = 115200)
             {
                 txPin.Init();
                 rxPin.Init();
                 EnableClock();
                 UartConfig(baudRate);
+                ConfigureExtiReceive();
             }
 
             //TODO make more generic - usable also for other uarts

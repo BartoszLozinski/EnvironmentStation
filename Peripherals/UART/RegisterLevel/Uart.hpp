@@ -21,12 +21,13 @@
 #include "../Utils/RingBuffer.hpp"
 
 
+
 namespace Peripherals
 {
     namespace RegisterLevel
     {
-        template<USARTx Usart, std::size_t bufferSize = 64>
-        class Uart : public UartBase<Usart, bufferSize>
+        template< std::size_t bufferSize = 64>
+        class Uart : public UartBase<USART_TypeDef, bufferSize>
         {
         protected:
             UartRingBuffer<bufferSize> rxBuffer{};
@@ -47,17 +48,17 @@ namespace Peripherals
             }
 
         public:
-            Uart(const Uart& source) = delete;
-            Uart(Uart&& source) = delete;
-            Uart& operator=(const Uart& source) = delete;
-            Uart& operator=(Uart&& source) = delete;
-            Uart(Usart* const usart_) : UartBase<Usart, bufferSize>(usart_) {};
+            Uart(const USART_TypeDef& source) = delete;
+            Uart(USART_TypeDef&& source) = delete;
+            Uart& operator=(const USART_TypeDef& source) = delete;
+            Uart& operator=(USART_TypeDef&& source) = delete;
+            Uart(USART_TypeDef* const usart_) : UartBase<USART_TypeDef, bufferSize>(usart_) {};
 
             /*Get appropriate Tx and Rx pins from datasheet*/
-            template<Peripherals::RegisterLevel::GpioPort TxPin, Peripherals::RegisterLevel::GpioPort RxPin>
+            template<typename TxPin, typename RxPin>
             void Init(TxPin& txPin, RxPin& rxPin, const uint32_t baudRate = 115200)
             {
-                this->UartBase<Usart, bufferSize>::Init(txPin, rxPin, baudRate);
+                this->UartBase<USART_TypeDef, bufferSize>::Init(txPin, rxPin, baudRate);
                 EnableRxInterrupt();
             }
 
