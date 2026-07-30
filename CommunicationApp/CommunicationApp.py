@@ -6,20 +6,22 @@ import serial
 import select
 import sys
 
-stm32Uart2 = serial.Serial("/dev/ttyACM1", 115200, timeout=0.1)
+uart = serial.Serial("/dev/ttyACM1", 115200, timeout=0.1)
 
-while True:
-    # Read uart
-    data = stm32Uart2.readline()
+
+def process_read():
+    data = uart.readline()
     if data:
         data = data.decode()
         print(data)
 
-    # Read keyboard without blocking
+
+def process_keyboard():
     if select.select([sys.stdin], [], [], 0)[0]:
         line = sys.stdin.readline()
+        uart.write(line.encode())
 
-        if line.strip() == "exit":
-            break
 
-        stm32Uart2.write(line.encode())
+while True:
+    process_read()
+    process_keyboard()
