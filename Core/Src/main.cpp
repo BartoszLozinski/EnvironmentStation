@@ -15,6 +15,9 @@
 
 #include "../Inc/peripheralsDefinition.h"
 
+#include "../../Scheduler/Task.hpp"
+#include "../../Scheduler/Scheduler.hpp"
+
 Peripherals::HAL::UartIT btHC06Uart{ huart1 }; //PA9 (TX), PA10 (RX)
 //Peripherals::HAL::UartIT uart2{ huart2 };
 Peripherals::HAL::I2C_IT i2c1IT{ hi2c1 };
@@ -45,6 +48,27 @@ int main()
     i2c1.SetTimeout(100);
     Device::LPS25HB lps25hb{ i2c1 };
 
+    Task<HAL::SoftwareTimer> readTemperatureTask{ 500, [&]()
+    {
+        if (const auto result = lps25hbAsync.ReadTemperature(); result)
+        {
+            char messageBuffer[32];
+            snprintf(messageBuffer, sizeof(messageBuffer), "Temp LPS: %.2f C\r\n", result.value());
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
+        }
+    }};
+
+    Task<HAL::SoftwareTimer> readPressureTask{ 500, [&]()
+    {
+        if (const auto result = lps25hbAsync.ReadPressure(); result)
+        {
+            char messageBuffer[32];
+            snprintf(messageBuffer, sizeof(messageBuffer), "Pressure LPS: %lu hPa\r\n", result.value());
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
+        }
+    }};
+    
+    Scheduler<Task<HAL::SoftwareTimer>, 2> scheduler{ { readTemperatureTask, readPressureTask } };
 
     // LPS25HB test
 
@@ -89,6 +113,8 @@ int main()
         //uart2.ProcessRx();
         btHC06Uart.ProcessRx();
         
+        //TODO - create scheduler class instead of handling it in the main
+
         
         //TODO: fix bthc06 reciever
         if (const auto lineOpt = btLineParser.ReadLine())
@@ -117,7 +143,8 @@ int main()
         }
 
         // End of UART Test
-
+        
+        /*
         if (const auto result = lps25hbAsync.ReadTemperature(); result && temperatureReadingTimer.IsExpired())
         {
             temperatureReadingTimer.Reset();
@@ -132,7 +159,9 @@ int main()
             char messageBuffer[32];
             snprintf(messageBuffer, sizeof(messageBuffer), "Pressure LPS IT: %lu hPa\r\n", result.value());
             uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
-        }
+        }*/
+
+        scheduler.Run();
 
         if (ld2Timer.IsExpired())
         {

@@ -28,6 +28,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         UART_HAL
         UART_RegisterLevel
         Devices
+        Scheduler
 )
 
 configure_embedded_target(${CMAKE_PROJECT_NAME})
