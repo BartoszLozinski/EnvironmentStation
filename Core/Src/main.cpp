@@ -35,13 +35,8 @@ int main()
     MX_USART1_UART_Init();
     MX_I2C1_Init();
     
-    HAL::SoftwareTimer uartResetTimer{ 2000 };
-    HAL::SoftwareTimer uart2PollTimer{ 1 };
     HAL::SoftwareTimer btUartResetTimer{ 2000 };
     HAL::SoftwareTimer btUartPollTimer{ 1 };
-    HAL::SoftwareTimer temperatureReadingTimer{ 500 };
-    HAL::SoftwareTimer pressureReadingTimer{ 500 };
-    HAL::SoftwareTimer ld2Timer{ 500 };
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
     Peripherals::HAL::I2C i2c1{ hi2c1 };
@@ -67,8 +62,28 @@ int main()
             uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
         }
     }};
+
+    Task<HAL::SoftwareTimer> ld2Task{ 250, [&]()
+    {
+        ld2.Toggle();
+    }};
+
+    Task<HAL::SoftwareTimer> uart2ReadLineTask{ 1, [&]()
+    {
+        if (const auto lineOpt = lineParser.ReadLine())
+        {
+            const auto line = *lineOpt;
+            const char* prefix = "RX Uart2IT: ";
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(prefix), strlen(prefix));
+            uart2.Transmit(reinterpret_cast<const uint8_t*>(line.data()), line.size());
+            uart2.Transmit(reinterpret_cast<const uint8_t*>("\r\n"), 2);
+        }
+    }};
     
-    Scheduler<Task<HAL::SoftwareTimer>, 2> scheduler{ { readTemperatureTask, readPressureTask } };
+    Scheduler<Task<HAL::SoftwareTimer>, 4> scheduler{ { readTemperatureTask
+                                                      , readPressureTask
+                                                      , ld2Task
+                                                      , uart2ReadLineTask } };
 
     // LPS25HB test
 
@@ -112,10 +127,7 @@ int main()
         btHC06Uart.ProcessTx();
         //uart2.ProcessRx();
         btHC06Uart.ProcessRx();
-        
-        //TODO - create scheduler class instead of handling it in the main
 
-        
         //TODO: fix bthc06 reciever
         if (const auto lineOpt = btLineParser.ReadLine())
         {
@@ -133,41 +145,9 @@ int main()
             btHC06Uart.Transmit(reinterpret_cast<const uint8_t*>(resetMsg.data()), resetMsg.size());
         }
         
-        if (const auto lineOpt = lineParser.ReadLine())
-        {
-            const auto line = *lineOpt;
-            const char* prefix = "RX Uart2IT: ";
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(prefix), strlen(prefix));
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(line.data()), line.size());
-            uart2.Transmit(reinterpret_cast<const uint8_t*>("\r\n"), 2);
-        }
-
         // End of UART Test
         
-        /*
-        if (const auto result = lps25hbAsync.ReadTemperature(); result && temperatureReadingTimer.IsExpired())
-        {
-            temperatureReadingTimer.Reset();
-            char messageBuffer[32];
-            snprintf(messageBuffer, sizeof(messageBuffer), "Temp LPS IT: %.2f C\r\n", result.value());
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
-        }
-        
-        if (const auto result = lps25hbAsync.ReadPressure(); result && pressureReadingTimer.IsExpired())
-        {
-            pressureReadingTimer.Reset();
-            char messageBuffer[32];
-            snprintf(messageBuffer, sizeof(messageBuffer), "Pressure LPS IT: %lu hPa\r\n", result.value());
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
-        }*/
-
         scheduler.Run();
-
-        if (ld2Timer.IsExpired())
-        {
-            ld2Timer.Reset();
-            ld2.Toggle();
-        }
     }
 }
 
