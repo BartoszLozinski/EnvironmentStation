@@ -17,6 +17,7 @@
 
 #include <optional>
 
+#include "../IUart.hpp"
 #include "UartBase.hpp"
 #include "../Utils/RingBuffer.hpp"
 
@@ -27,7 +28,8 @@ namespace Peripherals
     namespace RegisterLevel
     {
         template< std::size_t bufferSize = 64>
-        class Uart : public UartBase<USART_TypeDef, bufferSize>
+        class Uart : public IUart
+            , public UartBase<USART_TypeDef, bufferSize>
         {
         protected:
             UartRingBuffer<bufferSize> rxBuffer{};
@@ -62,12 +64,12 @@ namespace Peripherals
                 EnableRxInterrupt();
             }
 
-            std::optional<uint8_t> Read()
+            std::optional<uint8_t> Read() override
             {
                 return rxBuffer.Pop();
             }
 
-            void Transmit(const uint8_t* data, std::size_t size)
+            void Transmit(const uint8_t* data, std::size_t size) override
             {
                 for (std::size_t i = 0; i < size; ++i)
                 {
