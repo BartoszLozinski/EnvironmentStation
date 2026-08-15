@@ -18,6 +18,9 @@ namespace Device
         case RxTempReading:
             state = TempReadyToRead;
             break;
+        case MeasurementFrequencyCtrlReg1Reading:
+            state = MeasurementFrequencyCtrlReg1ReadyToRead;
+            break;
         default:
             state = RegisterReadyToRead;
         }
@@ -28,6 +31,8 @@ namespace Device
         i2c.OnTxComplete();
         if (state == State::WakeUpScheduled)
             state = State::WakeUpCompleted;
+        else if (state == State::SetupMeasurementFrequencyScheduled)
+            state = State::SetupMeasurementFrequencyCompleted;
     }
 
     std::optional<uint8_t> LPS25HB_Async::ReadRegister(const uint8_t reg)
@@ -100,6 +105,41 @@ namespace Device
         return std::nullopt;
     }
 
+    void LPS25HB_Async::ReadCurrentMeasurementFrequency()
+    {
+        StartRead(Registers::CTRL_REG1, std::span<uint8_t>(&measurementFrequencyCtrlReg1, sizeof(measurementFrequencyCtrlReg1)), State::MeasurementFrequencyCtrlReg1Reading);
+    }
+    
+    void LPS25HB_Async::SetMeasurementFrequency(const MeasurementFrequency freq)
+    {
+        static constexpr uint8_t ODR_MASK = Registers::CTRL_REG1_ODR2 | Registers::CTRL_REG1_ODR1 | Registers::CTRL_REG1_ODR0;
+
+        //Sync version copied
+        uint8_t regValue = 0;
+        switch (freq)
+        {
+        case MeasurementFrequency::OneShot:
+            regValue = 0x00;
+            break;
+        case MeasurementFrequency::Hz1:
+            regValue = Registers::CTRL_REG1_ODR0;
+            break;
+        case MeasurementFrequency::Hz7:
+            regValue = Registers::CTRL_REG1_ODR1;
+            break;
+        case MeasurementFrequency::Hz12_5:
+            regValue = Registers::CTRL_REG1_ODR1 | Registers::CTRL_REG1_ODR0;
+            break;
+        case MeasurementFrequency::Hz25:
+            regValue = Registers::CTRL_REG1_ODR2;
+            break;
+        }
+
+        uint8_t newVal = (measurementFrequencyCtrlReg1 & ~ODR_MASK) | (regValue & ODR_MASK);
+        i2c.Write(Registers::ADDR, Registers::CTRL_REG1, std::span<uint8_t>(&newVal, sizeof(newVal)));
+        state = State::SetupMeasurementFrequencyScheduled;        
+    }
+
     void LPS25HB_Async::StartRead(const int16_t reg, std::span<uint8_t>(buffer), const State successfulState)
     {
         state = i2c.Read(Registers::ADDR
@@ -109,25 +149,38 @@ namespace Device
 
     void LPS25HB_Async::WakeUp()
     {
-        if (state == State::Idle)
+        if (isAwake)
+            return;
+
+        switch (state)
         {
+        case State::Idle:
             wakeUpCurrentCtrlReg1 = 0;
             StartRead(Registers::CTRL_REG1, std::span<uint8_t>(&readRegisterBuffer, sizeof(readRegisterBuffer)), State::TransferScheduled);
-        }
-        else if (state == State::RegisterReadyToRead)
-        {
+            break;
+        case State::RegisterReadyToRead:
             wakeUpCurrentCtrlReg1 = readRegisterBuffer;            
             i2c.NotifyDataIsRead();
             state = State::WakeUpScheduled;
             wakeUpCurrentCtrlReg1 = static_cast<uint8_t>(wakeUpCurrentCtrlReg1 | Registers::CTRL_REG1_PD);
             i2c.Write(Registers::ADDR, Registers::CTRL_REG1, std::span<uint8_t>(&wakeUpCurrentCtrlReg1, sizeof(wakeUpCurrentCtrlReg1)));
-            
-        }
-        else if (state == State::WakeUpCompleted)
-        {
-            state = State::Idle;
+            break;
+        case State::WakeUpCompleted:
+            i2c.NotifyDataIsRead();
+            ReadCurrentMeasurementFrequency();
+            break;
+        case State::MeasurementFrequencyCtrlReg1ReadyToRead:
+            measurementFrequencyCtrlReg1 = readRegisterBuffer;
+            i2c.NotifyDataIsRead();
+            SetMeasurementFrequency(MeasurementFrequency::Hz25);
+            break;
+        case State::SetupMeasurementFrequencyCompleted:
             i2c.NotifyDataIsRead();
             isAwake = true;
+            state = State::Idle;
+            break;
+        default:
+            break;
         }
     }
 }

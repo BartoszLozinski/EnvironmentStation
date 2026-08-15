@@ -91,31 +91,6 @@ int main()
     uart2.Init(uart2Tx, uart2Rx, 115200);
     ld2.Init();
 
-    static constexpr char testMsg[] = "LPS25HB test:\r\n";
-    uart2.Transmit(reinterpret_cast<const uint8_t*>(testMsg), strlen(testMsg));
-    
-    //TO DO - change into state machine, instead of waking up  in blocking loop
-    while(!lps25hbAsync.IsAwake())
-        lps25hbAsync.WakeUp();
-    
-    lps25hb.SetMeasurementFrequency(Device::LPS25HB::MeasurementFrequency::Hz25);
-    HAL_Delay(100); //TODO - get rid to blocking delay
-
-    const auto whoAmI = lps25hb.ReadWhoAmI();
-
-    if (whoAmI.has_value() && whoAmI.value() == 0xBD)
-    {
-        static constexpr char successMsg[] = "LPS25HB Found!\r\n";
-        uart2.Transmit(reinterpret_cast<const uint8_t*>(successMsg), strlen(successMsg));
-    }
-    else
-    {
-        char buffer[32];
-        snprintf(buffer, sizeof(buffer), "Error: (x%02X)\r\n", whoAmI.value());
-        uart2.Transmit(reinterpret_cast<const uint8_t*>(buffer), strlen(buffer));
-        return 1;
-    }
-
     while (true)
     {
         // UART 1 Test - Bluetooth HC-06
@@ -146,8 +121,12 @@ int main()
         }
         
         // End of UART Test
-        
-        scheduler.Run();
+        if (lps25hbAsync.IsAwake())
+            scheduler.Run();
+        else
+        {
+            lps25hbAsync.WakeUp();
+        }
     }
 }
 

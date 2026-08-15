@@ -15,12 +15,16 @@ namespace Device
             Idle,
             TransferScheduled,
             WakeUpScheduled,
+            SetupMeasurementFrequencyScheduled,
+            MeasurementFrequencyCtrlReg1Reading,
+            MeasurementFrequencyCtrlReg1ReadyToRead,
             RxTempReading,
             RxPressureReading,
             TempReadyToRead,
             PressureReadyToRead,
             RegisterReadyToRead,
             WakeUpCompleted,
+            SetupMeasurementFrequencyCompleted,
             Error,
         };
         
@@ -35,6 +39,7 @@ namespace Device
         uint8_t readRegisterBuffer{}; 
         std::array<uint8_t, 2> rawTempBuffer{};
         std::array<uint8_t, 3> rawPressureBuffer{};
+        uint8_t measurementFrequencyCtrlReg1 = 0;
         uint8_t wakeUpCurrentCtrlReg1 = 0;
         bool isAwake = false;
 
@@ -52,6 +57,7 @@ namespace Device
         [[nodiscard]] std::optional<uint8_t> ReadWhoAmI() override;
         [[nodiscard]] std::optional<float> ReadTemperature() override;
         [[nodiscard]] std::optional<int32_t> ReadPressure() override;
+        void ReadCurrentMeasurementFrequency();
         void SetMeasurementFrequency(const MeasurementFrequency freq);
         [[nodiscard]] bool IsAwake() const { return isAwake; }
         void WakeUp() override;
