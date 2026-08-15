@@ -135,8 +135,8 @@ namespace Device
             break;
         }
 
-        uint8_t newVal = (measurementFrequencyCtrlReg1 & ~ODR_MASK) | (regValue & ODR_MASK);
-        i2c.Write(Registers::ADDR, Registers::CTRL_REG1, std::span<uint8_t>(&newVal, sizeof(newVal)));
+        measurementFrequencyCtrlReg1 = (measurementFrequencyCtrlReg1 & ~ODR_MASK) | (regValue & ODR_MASK);
+        i2c.Write(Registers::ADDR, Registers::CTRL_REG1, std::span<uint8_t>(&measurementFrequencyCtrlReg1, sizeof(measurementFrequencyCtrlReg1)));
         state = State::SetupMeasurementFrequencyScheduled;        
     }
 
@@ -159,7 +159,7 @@ namespace Device
             StartRead(Registers::CTRL_REG1, std::span<uint8_t>(&readRegisterBuffer, sizeof(readRegisterBuffer)), State::TransferScheduled);
             break;
         case State::RegisterReadyToRead:
-            wakeUpCurrentCtrlReg1 = readRegisterBuffer;            
+            wakeUpCurrentCtrlReg1 = readRegisterBuffer;
             i2c.NotifyDataIsRead();
             state = State::WakeUpScheduled;
             wakeUpCurrentCtrlReg1 = static_cast<uint8_t>(wakeUpCurrentCtrlReg1 | Registers::CTRL_REG1_PD);
@@ -170,7 +170,6 @@ namespace Device
             ReadCurrentMeasurementFrequency();
             break;
         case State::MeasurementFrequencyCtrlReg1ReadyToRead:
-            measurementFrequencyCtrlReg1 = readRegisterBuffer;
             i2c.NotifyDataIsRead();
             SetMeasurementFrequency(MeasurementFrequency::Hz25);
             break;
