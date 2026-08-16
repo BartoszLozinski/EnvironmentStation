@@ -6,11 +6,9 @@
 #include "stm32CubeMXGenerated.h"
 
 #include "../../Peripherals/Timer/HAL/SoftwareTimer.hpp"
-#include "../../Peripherals/I2C/HAL/I2C.hpp"
 #include "../../Peripherals/I2C/HAL/I2C_IT.hpp"
 #include "../../Peripherals/UART/HAL/UartIT.hpp"
 #include "../../Peripherals/UART/LineParser.hpp"
-#include "../../Devices/LPS25HB.hpp"
 #include "../../Devices/LPS25HB_Async.hpp"
 
 #include "../Inc/peripheralsDefinition.h"
@@ -39,28 +37,28 @@ int main()
     HAL::SoftwareTimer btUartPollTimer{ 1 };
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
-    Peripherals::HAL::I2C i2c1{ hi2c1 };
-    i2c1.SetTimeout(100);
-    Device::LPS25HB lps25hb{ i2c1 };
 
-    Task<HAL::SoftwareTimer> readTemperatureTask{ 500, [&]()
+    float temperature = 0.0f;
+    uint32_t pressure = 0;
+
+    Task<HAL::SoftwareTimer> readLPS25HBSensorTask{ 50, [&]()
     {
-        if (const auto result = lps25hbAsync.ReadTemperature(); result)
+        if (const auto readTemp = lps25hbAsync.ReadTemperature(); readTemp)
         {
-            char messageBuffer[32];
-            snprintf(messageBuffer, sizeof(messageBuffer), "Temp LPS: %.2f C\r\n", result.value());
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
+            temperature = readTemp.value();
+        }
+
+        if (const auto readPressure = lps25hbAsync.ReadPressure(); readPressure)
+        {
+            pressure = readPressure.value();
         }
     }};
 
-    Task<HAL::SoftwareTimer> readPressureTask{ 500, [&]()
+    Task<HAL::SoftwareTimer> printTemperaturePressureTask{ 500, [&]()
     {
-        if (const auto result = lps25hbAsync.ReadPressure(); result)
-        {
-            char messageBuffer[32];
-            snprintf(messageBuffer, sizeof(messageBuffer), "Pressure LPS: %lu hPa\r\n", result.value());
-            uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
-        }
+        char messageBuffer[48];
+        snprintf(messageBuffer, sizeof(messageBuffer), "Temp: %.2f C, Pressure: %lu hPa\r\n", temperature, pressure);
+        uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
     }};
 
     Task<HAL::SoftwareTimer> ld2Task{ 250, [&]()
@@ -80,8 +78,8 @@ int main()
         }
     }};
     
-    Scheduler<Task<HAL::SoftwareTimer>, 4> scheduler{ { readTemperatureTask
-                                                      , readPressureTask
+    Scheduler<Task<HAL::SoftwareTimer>, 4> scheduler{ { readLPS25HBSensorTask
+                                                      , printTemperaturePressureTask
                                                       , ld2Task
                                                       , uart2ReadLineTask } };
 
