@@ -52,6 +52,8 @@
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+volatile uint32_t systemTickCounter = 0;
+
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -185,6 +187,8 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
+
+    ++systemTickCounter;
 
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();

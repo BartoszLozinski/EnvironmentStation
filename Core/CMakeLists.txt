@@ -25,6 +25,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         # Gpio_HAL
         # ADC_HAL
         Timer
+        Timer_RegisterLevel
         UART_HAL
         UART_RegisterLevel
         Devices

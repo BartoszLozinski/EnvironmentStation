@@ -5,7 +5,7 @@
 
 #include "stm32CubeMXGenerated.h"
 
-#include "../../Peripherals/Timer/HAL/SoftwareTimer.hpp"
+#include "../../Peripherals/Timer/RegisterLevel/SoftwareTimer.hpp"
 #include "../../Peripherals/I2C/HAL/I2C_IT.hpp"
 #include "../../Peripherals/UART/HAL/UartIT.hpp"
 #include "../../Peripherals/UART/LineParser.hpp"
@@ -17,7 +17,6 @@
 #include "../../Scheduler/Scheduler.hpp"
 
 Peripherals::HAL::UartIT btHC06Uart{ huart1 }; //PA9 (TX), PA10 (RX)
-//Peripherals::HAL::UartIT uart2{ huart2 };
 Peripherals::HAL::I2C_IT i2c1IT{ hi2c1 };
 Device::LPS25HB_Async lps25hbAsync{ i2c1IT };
 
@@ -33,40 +32,36 @@ int main()
     MX_USART1_UART_Init();
     MX_I2C1_Init();
     
-    HAL::SoftwareTimer btUartResetTimer{ 2000 };
-    HAL::SoftwareTimer btUartPollTimer{ 1 };
+    RegisterLevel::SoftwareTimer btUartResetTimer{ 2000 };
+    RegisterLevel::SoftwareTimer btUartPollTimer{ 1 };
     UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
 
     float temperature = 0.0f;
     uint32_t pressure = 0;
 
-    Task<HAL::SoftwareTimer> readLPS25HBSensorTask{ 50, [&]()
+    Task<RegisterLevel::SoftwareTimer> readLPS25HBSensorTask{ 50, [&]()
     {
         if (const auto readTemp = lps25hbAsync.ReadTemperature(); readTemp)
-        {
             temperature = readTemp.value();
-        }
 
         if (const auto readPressure = lps25hbAsync.ReadPressure(); readPressure)
-        {
             pressure = readPressure.value();
-        }
     }};
 
-    Task<HAL::SoftwareTimer> printTemperaturePressureTask{ 500, [&]()
+    Task<RegisterLevel::SoftwareTimer> printTemperaturePressureTask{ 500, [&]()
     {
         char messageBuffer[48];
         snprintf(messageBuffer, sizeof(messageBuffer), "Temp: %.2f C, Pressure: %lu hPa\r\n", temperature, pressure);
         uart2.Transmit(reinterpret_cast<const uint8_t*>(messageBuffer), strlen(messageBuffer));
     }};
 
-    Task<HAL::SoftwareTimer> ld2Task{ 250, [&]()
+    Task<RegisterLevel::SoftwareTimer> ld2Task{ 150, [&]()
     {
         ld2.Toggle();
     }};
 
-    Task<HAL::SoftwareTimer> uart2ReadLineTask{ 1, [&]()
+    Task<RegisterLevel::SoftwareTimer> uart2ReadLineTask{ 1, [&]()
     {
         if (const auto lineOpt = lineParser.ReadLine())
         {
@@ -78,7 +73,7 @@ int main()
         }
     }};
     
-    Scheduler<Task<HAL::SoftwareTimer>, 4> scheduler{ { readLPS25HBSensorTask
+    Scheduler<Task<RegisterLevel::SoftwareTimer>, 4> scheduler{ { readLPS25HBSensorTask
                                                       , printTemperaturePressureTask
                                                       , ld2Task
                                                       , uart2ReadLineTask } };
