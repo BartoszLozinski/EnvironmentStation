@@ -20,7 +20,7 @@
 Peripherals::HAL::UartIT btHC06Uart{ huart1 }; //PA9 (TX), PA10 (RX)
 Peripherals::HAL::I2C_IT i2c1IT{ hi2c1 };
 Device::LPS25HB_Async lps25hbAsync{ i2c1IT };
-//Peripherals::HAL::Pwm tim3_ch1_pa6{ htim3, 1 }; //PA6
+Peripherals::HAL::Pwm tim3_ch1_pa6{ htim3, TIM_CHANNEL_1 }; //PA6
 
 
 int main()
@@ -88,14 +88,12 @@ int main()
     uart2.ConfigureInterruptsPriority(IRQn_Type::USART2_IRQn, 1);
     uart2.Init(uart2Tx, uart2Rx, 115200);
     ld2.Init();
-    //tim3_ch1_pa6.Start();
-    std::size_t pulse = 50;
-
+    
+    std::size_t pulse = 0;
     RegisterLevel::SoftwareTimer pulseTimer{ 50 };
-    //tim3_ch1_pa6.SetPulse(pulse);
 
-    HAL_TIM_Base_Start_IT(&htim3);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+    tim3_ch1_pa6.Start();
+    tim3_ch1_pa6.SetPulse(pulse);
 
     while (true)
     {
@@ -133,16 +131,18 @@ int main()
         {
             lps25hbAsync.WakeUp();
         }
-
         
-        
+        // TO DO
+        // write keyboard controller
+        // that uses "spacebard" to increase pulse
+        // "Lctrl" to decrease pulse
+        // mid point at 25%
         if (pulseTimer.IsExpired())
         {
             pulseTimer.Reset();
-            //tim3_ch1_pa6.SetPulse(pulse);
-            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, pulse);
-            pulse += 10;
-            if (pulse >= 1000)
+            tim3_ch1_pa6.SetPulse(pulse);
+            pulse += 100;
+            if (pulse >= tim3_ch1_pa6.GetMaxCounter())
                 pulse = 0;
         }
         
