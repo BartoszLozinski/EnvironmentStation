@@ -35,6 +35,7 @@ namespace Peripherals
             ~Pwm() = default;
 
             Pwm(TIM_HandleTypeDef& timer_, const uint32_t channel_);
+            uint32_t GetPulse() const;
         };
     };
 }

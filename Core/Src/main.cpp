@@ -39,7 +39,7 @@ int main()
     
     RegisterLevel::SoftwareTimer btUartResetTimer{ 2000 };
     RegisterLevel::SoftwareTimer btUartPollTimer{ 1 };
-    UcCommunication::LineParser lineParser{ uart2 };
+    //UcCommunication::LineParser lineParser{ uart2 };
     UcCommunication::LineParser btLineParser{ btHC06Uart };
 
     float temperature = 0.0f;
@@ -66,6 +66,7 @@ int main()
         ld2.Toggle();
     }};
 
+    /*
     Task<RegisterLevel::SoftwareTimer> uart2ReadLineTask{ 1, [&]()
     {
         if (const auto lineOpt = lineParser.ReadLine())
@@ -77,23 +78,49 @@ int main()
             uart2.Transmit(reinterpret_cast<const uint8_t*>("\r\n"), 2);
         }
     }};
+    */
+
+    Task<RegisterLevel::SoftwareTimer> ledControllerTask{ 10, [&]()
+    {
+        static constexpr uint32_t restPulse = 2499;
+        static constexpr int32_t minPulse = 0;
+        static constexpr uint32_t increasement = 100;
+
+        volatile const auto currentPulse = tim3_ch1_pa6.GetPulse();
+
+        if (const auto readValue = uart2.Read(); readValue)
+        {
+            const auto value = readValue.value();
+
+            if (value == 'w')
+            {
+                tim3_ch1_pa6.SetPulse(currentPulse + increasement); //
+            }
+            else if (value == 's')
+            {
+                const int32_t calculatedPulse = currentPulse - increasement;
+                tim3_ch1_pa6.SetPulse(calculatedPulse < minPulse ? minPulse : calculatedPulse);
+            }
+            else
+            {
+                tim3_ch1_pa6.SetPulse(restPulse);
+            }
+            //TO DO: add PID controller to decrease pulse when nothing is read, or invalid button is pressed
+        }
+    }};
     
     Scheduler<Task<RegisterLevel::SoftwareTimer>, 4> scheduler{ { readLPS25HBSensorTask
                                                       , printTemperaturePressureTask
                                                       , ld2Task
-                                                      , uart2ReadLineTask } };
+                                                      , ledControllerTask } };
 
     // LPS25HB test
 
     uart2.ConfigureInterruptsPriority(IRQn_Type::USART2_IRQn, 1);
     uart2.Init(uart2Tx, uart2Rx, 115200);
     ld2.Init();
-    
-    std::size_t pulse = 0;
-    RegisterLevel::SoftwareTimer pulseTimer{ 50 };
 
     tim3_ch1_pa6.Start();
-    tim3_ch1_pa6.SetPulse(pulse);
 
     while (true)
     {
@@ -128,25 +155,7 @@ int main()
         if (lps25hbAsync.IsAwake())
             scheduler.Run();
         else
-        {
             lps25hbAsync.WakeUp();
-        }
-        
-        // TO DO
-        // write keyboard controller
-        // that uses "spacebard" to increase pulse
-        // "Lctrl" to decrease pulse
-        // mid point at 25%
-        if (pulseTimer.IsExpired())
-        {
-            pulseTimer.Reset();
-            tim3_ch1_pa6.SetPulse(pulse);
-            pulse += 100;
-            if (pulse >= tim3_ch1_pa6.GetMaxCounter())
-                pulse = 0;
-        }
-        
-        
     }
 }
 

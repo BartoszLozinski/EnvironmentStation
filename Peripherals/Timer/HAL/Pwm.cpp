@@ -41,6 +41,11 @@ namespace Peripherals
             __HAL_TIM_SET_COMPARE(&timer, channel, saturatedPulse);
         }
 
+        uint32_t Pwm::GetPulse() const
+        {
+            return __HAL_TIM_GET_COMPARE(&timer, channel);
+        }
+
         void Pwm::ResetCounter_Impl()
         {
             __HAL_TIM_SET_COUNTER(&timer, 0);
