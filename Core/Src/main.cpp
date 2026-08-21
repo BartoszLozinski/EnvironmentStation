@@ -80,6 +80,7 @@ int main()
     }};
     */
 
+    std::optional<uint8_t> previousReadValue = std::nullopt;    
     Task<RegisterLevel::SoftwareTimer> ledControllerTask{ 10, [&]()
     {
         static constexpr uint32_t restPulse = 2499;
@@ -87,8 +88,9 @@ int main()
         static constexpr uint32_t increasement = 100;
 
         volatile const auto currentPulse = tim3_ch1_pa6.GetPulse();
+        const auto readValue = uart2.Read();
 
-        if (const auto readValue = uart2.Read(); readValue)
+        if (readValue)
         {
             const auto value = readValue.value();
 
@@ -101,12 +103,25 @@ int main()
                 const int32_t calculatedPulse = currentPulse - increasement;
                 tim3_ch1_pa6.SetPulse(calculatedPulse < minPulse ? minPulse : calculatedPulse);
             }
-            else
-            {
-                tim3_ch1_pa6.SetPulse(restPulse);
-            }
+            
             //TO DO: add PID controller to decrease pulse when nothing is read, or invalid button is pressed
         }
+        else if (!previousReadValue.has_value())
+        {
+            static constexpr uint32_t restPulseIncreasement = 25;
+            if (currentPulse > restPulse)
+            {
+                const uint32_t calculatedPulse = currentPulse - restPulseIncreasement;
+                tim3_ch1_pa6.SetPulse(calculatedPulse < restPulse ? restPulse : calculatedPulse);
+            }
+            else if (currentPulse < restPulse)
+            {
+                const uint32_t calculatedPulse = currentPulse + restPulseIncreasement;
+                tim3_ch1_pa6.SetPulse(calculatedPulse > restPulse ? restPulse : calculatedPulse);
+            }
+        }
+
+        previousReadValue = readValue;
     }};
     
     Scheduler<Task<RegisterLevel::SoftwareTimer>, 4> scheduler{ { readLPS25HBSensorTask
