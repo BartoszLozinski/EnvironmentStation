@@ -47,11 +47,18 @@ int main()
 
     Task<RegisterLevel::SoftwareTimer> readLPS25HBSensorTask{ 50, [&]()
     {
-        if (const auto readTemp = lps25hbAsync.ReadTemperature(); readTemp)
-            temperature = readTemp.value();
+        if (lps25hbAsync.IsAwake())
+        {
+            if (const auto readTemp = lps25hbAsync.ReadTemperature(); readTemp)
+                temperature = readTemp.value();
 
-        if (const auto readPressure = lps25hbAsync.ReadPressure(); readPressure)
-            pressure = readPressure.value();
+            if (const auto readPressure = lps25hbAsync.ReadPressure(); readPressure)
+                pressure = readPressure.value();
+        }
+        else
+        {
+            lps25hbAsync.WakeUp();
+        }
     }};
 
     Task<RegisterLevel::SoftwareTimer> printTemperaturePressureTask{ 500, [&]()
@@ -80,34 +87,15 @@ int main()
     }};
     */
 
-    std::optional<uint8_t> previousReadValue = std::nullopt;    
+    std::optional<uint8_t> previousReadValue = std::nullopt;
     Task<RegisterLevel::SoftwareTimer> ledControllerTask{ 10, [&]()
     {
-        static constexpr uint32_t restPulse = 2499;
-        static constexpr int32_t minPulse = 0;
-        static constexpr uint32_t increasement = 100;
-
         volatile const auto currentPulse = tim3_ch1_pa6.GetPulse();
         const auto readValue = uart2.Read();
 
-        if (readValue)
+        auto ledControlFunction = [&]()
         {
-            const auto value = readValue.value();
-
-            if (value == 'w')
-            {
-                tim3_ch1_pa6.SetPulse(currentPulse + increasement); //
-            }
-            else if (value == 's')
-            {
-                const int32_t calculatedPulse = currentPulse - increasement;
-                tim3_ch1_pa6.SetPulse(calculatedPulse < minPulse ? minPulse : calculatedPulse);
-            }
-            
-            //TO DO: add PID controller to decrease pulse when nothing is read, or invalid button is pressed
-        }
-        else if (!previousReadValue.has_value())
-        {
+            static constexpr uint32_t restPulse = 799;
             static constexpr uint32_t restPulseIncreasement = 25;
             if (currentPulse > restPulse)
             {
@@ -119,6 +107,30 @@ int main()
                 const uint32_t calculatedPulse = currentPulse + restPulseIncreasement;
                 tim3_ch1_pa6.SetPulse(calculatedPulse > restPulse ? restPulse : calculatedPulse);
             }
+        };
+
+        if (readValue)
+        {
+            static constexpr int32_t minPulse = 0;
+            static constexpr uint32_t increasement = 100;
+
+            if (readValue.value() == 'w')
+            {
+                tim3_ch1_pa6.SetPulse(currentPulse + increasement);
+            }
+            else if (readValue.value() == 's')
+            {
+                const int32_t calculatedPulse = currentPulse - increasement;
+                tim3_ch1_pa6.SetPulse(calculatedPulse < minPulse ? minPulse : calculatedPulse);
+            }
+            else
+            {
+                ledControlFunction();
+            }            
+        }
+        else if (!previousReadValue.has_value())
+        {
+            ledControlFunction();   
         }
 
         previousReadValue = readValue;
@@ -167,10 +179,7 @@ int main()
         }
         
         // End of UART Test
-        if (lps25hbAsync.IsAwake())
-            scheduler.Run();
-        else
-            lps25hbAsync.WakeUp();
+        scheduler.Run();
     }
 }
 
